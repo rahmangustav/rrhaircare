@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Toko — RR Hair Care</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link rel="stylesheet" href="/css/store.css"/>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="/">RR<span>.</span> Hair Care</a>
+  <div class="nav-right">
+    <a href="/">Beranda</a>
+    <a href="/toko">Toko</a>
+    <button class="cart-btn" id="cartBtn"><i class="fa-solid fa-bag-shopping"></i>
+      <span class="cart-count" id="cartCount" style="display:none">0</span></button>
+  </div>
+</nav>
+
+<header class="shop-hero">
+  <div class="eyebrow">RR Hair Care Store</div>
+  <h1>Produk Perawatan Rambut</h1>
+  <p>Belanja produk premium pilihan langsung dari salon kami. Bayar praktis via QRIS, kirim ke seluruh Indonesia.</p>
+</header>
+
+<main class="container">
+  <div class="grid" id="grid"><div class="empty">Memuat produk…</div></div>
+</main>
+
+<!-- Cart drawer -->
+<div class="overlay" id="overlay"></div>
+<aside class="drawer" id="drawer">
+  <header><h2>Keranjang</h2><button class="close" id="closeCart"><i class="fa-solid fa-xmark"></i></button></header>
+  <div class="items" id="cartItems"></div>
+  <footer id="cartFooter" style="display:none">
+    <div class="row-total grand"><span>Subtotal</span><span id="cartSubtotal">Rp0</span></div>
+    <a href="/checkout.html" class="btn btn-primary btn-block">Lanjut ke Pembayaran</a>
+  </footer>
+</aside>
+
+<div class="toast" id="toast"></div>
+<script src="/js/cart.js"></script>
+<script>
+const grid = document.getElementById('grid');
+const rupiah = n => 'Rp' + (Number(n)||0).toLocaleString('id-ID');
+
+async function loadProducts(){
+  const res = await fetch('/api/products');
+  const products = await res.json();
+  if(!products.length){ grid.innerHTML = '<div class="empty">Produk segera hadir. Nantikan koleksi perawatan rambut kami. 💫</div>'; return; }
+  grid.innerHTML = products.map(p => {
+    const habis = p.stock <= 0;
+    const img = p.image ? `<img src="${p.image}" alt="${esc(p.name)}"/>` : `<div class="ph"><i class="fa-solid fa-bottle-droplet"></i></div>`;
+    return `<div class="card">
+      <div class="thumb">${img}</div>
+      <div class="body">
+        <div class="cat">${esc(p.category||'Produk')}</div>
+        <h3>${esc(p.name)}</h3>
+        <div class="desc">${esc(p.description||'')}</div>
+        <div class="price">${rupiah(p.price)}</div>
+        <div class="stok ${habis?'habis':''}">${habis?'Stok habis':'Stok: '+p.stock}</div>
+        <button class="btn btn-gold btn-block add" data-id="${p.id}" ${habis?'disabled':''}>
+          <i class="fa-solid fa-plus"></i> ${habis?'Habis':'Tambah'}</button>
+      </div></div>`;
+  }).join('');
+  grid.querySelectorAll('.add').forEach(b => b.addEventListener('click', () => {
+    const p = products.find(x => x.id === b.dataset.id);
+    Cart.add(p); toast(`"${p.name}" masuk keranjang`);
+  }));
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+loadProducts();
+</script>
+</body>
+</html>

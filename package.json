@@ -1,0 +1,10 @@
+{
+  "name": "rrhaircare",
+  "version": "1.0.0",
+  "description": "RR Hair Care — landing + toko online (Netlify Functions + Blobs)",
+  "type": "module",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@netlify/blobs": "^8.2.0"
+  }
+}

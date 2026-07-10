@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Admin — RR Hair Care</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link rel="stylesheet" href="/css/store.css"/>
+<style>
+  .login-wrap{max-width:380px;margin:80px auto;text-align:center}
+  .tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:24px;flex-wrap:wrap}
+  .tab{padding:12px 20px;cursor:pointer;font-weight:600;font-size:.85rem;color:var(--muted);border-bottom:2px solid transparent}
+  .tab.active{color:var(--charcoal);border-bottom-color:var(--rose-gold)}
+  .view{display:none}.view.active{display:block}
+  table{width:100%;border-collapse:collapse;font-size:.86rem}
+  th,td{text-align:left;padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+  th{font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  .p-thumb{width:46px;height:46px;border-radius:8px;object-fit:cover;background:var(--ivory)}
+  .icon-btn{background:none;border:1px solid var(--line);border-radius:8px;padding:7px 10px;cursor:pointer;color:var(--charcoal);margin-right:4px}
+  .icon-btn:hover{border-color:var(--rose-gold);color:var(--rose-gold)}
+  .icon-btn.danger:hover{border-color:#c0392b;color:#c0392b}
+  .modal-bg{position:fixed;inset:0;background:rgba(26,26,26,.5);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
+  .modal-bg.show{display:flex}
+  .modal{background:#fff;border-radius:16px;padding:26px;width:min(520px,100%);max-height:90vh;overflow-y:auto}
+  .modal h3{font-family:var(--serif);font-weight:500;font-size:1.5rem;margin-bottom:6px}
+  .modal-actions{display:flex;gap:10px;margin-top:20px}
+  .stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:24px}
+  .stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px}
+  .stat .n{font-size:1.8rem;font-weight:700;font-family:var(--serif)}
+  .stat .l{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .ship-editor .ship-line{display:grid;grid-template-columns:1fr 130px 40px;gap:8px;margin-bottom:8px;align-items:center}
+  .ship-editor input{margin:0}
+  details.order{border:1px solid var(--line);border-radius:12px;margin-bottom:10px;background:#fff}
+  details.order summary{padding:14px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  details.order .od{padding:0 16px 16px}
+  .proof-img{max-width:180px;border-radius:10px;border:1px solid var(--line);margin-top:8px}
+</style>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="/">RR<span>.</span> Hair Care <span style="font-size:.7rem;color:var(--muted);letter-spacing:.1em">ADMIN</span></a>
+  <div class="nav-right">
+    <a href="/toko" target="_blank">Lihat Toko ↗</a>
+    <a href="#" id="logoutBtn" style="display:none">Keluar</a>
+  </div>
+</nav>
+
+<!-- LOGIN -->
+<div id="loginView" class="container">
+  <div class="login-wrap panel">
+    <h2 class="title">Login Admin</h2>
+    <p class="help" style="margin-bottom:16px">Masuk untuk mengelola produk & pesanan.</p>
+    <input type="password" id="pw" placeholder="Password admin" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button class="btn btn-primary btn-block" style="margin-top:14px" onclick="doLogin()">Masuk</button>
+    <p class="help" style="margin-top:12px">Halaman khusus pemilik toko.</p>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<main id="dash" class="container section" style="display:none">
+  <div class="tabs">
+    <div class="tab active" data-view="produk"><i class="fa-solid fa-box"></i> Produk</div>
+    <div class="tab" data-view="pesanan"><i class="fa-solid fa-receipt"></i> Pesanan</div>
+    <div class="tab" data-view="pengaturan"><i class="fa-solid fa-gear"></i> Pengaturan</div>
+  </div>
+
+  <!-- PRODUK -->
+  <section class="view active" id="v-produk">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h2 class="title">Kelola Produk</h2>
+      <button class="btn btn-gold" onclick="openProduct()"><i class="fa-solid fa-plus"></i> Tambah Produk</button>
+    </div>
+    <div class="panel" style="overflow-x:auto">
+      <table><thead><tr><th></th><th>Nama</th><th>Kategori</th><th>Harga</th><th>Stok</th><th>Status</th><th>Aksi</th></tr></thead>
+        <tbody id="prodBody"></tbody></table>
+    </div>
+  </section>
+
+  <!-- PESANAN -->
+  <section class="view" id="v-pesanan">
+    <h2 class="title" style="margin-bottom:16px">Pesanan Masuk</h2>
+    <div class="stat-row" id="orderStats"></div>
+    <div id="orderList"></div>
+  </section>
+
+  <!-- PENGATURAN -->
+  <section class="view" id="v-pengaturan">
+    <h2 class="title" style="margin-bottom:16px">Pengaturan Toko</h2>
+    <div class="checkout-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start">
+      <div class="panel">
+        <h3 style="font-family:var(--serif);font-weight:500;font-size:1.3rem;margin-bottom:6px">Info Toko</h3>
+        <label>Nama Toko</label><input id="setName"/>
+        <label>No. WhatsApp (format 62…)</label><input id="setWa" placeholder="6281234567890"/>
+        <label>Info Rekening / Transfer</label><input id="setBank" placeholder="BCA 1234567890 a.n. …"/>
+        <label>Gambar QRIS</label>
+        <div id="qrisPreview" style="margin:6px 0"></div>
+        <input type="file" id="setQris" accept="image/*"/>
+        <button class="btn btn-primary" style="margin-top:16px" onclick="saveInfo()">Simpan Info</button>
+      </div>
+      <div>
+        <div class="panel" style="margin-bottom:20px">
+          <h3 style="font-family:var(--serif);font-weight:500;font-size:1.3rem;margin-bottom:10px">Ongkir</h3>
+          <div class="ship-editor" id="shipEditor"></div>
+          <button class="icon-btn" onclick="addShipLine()"><i class="fa-solid fa-plus"></i> Tambah opsi</button>
+          <button class="btn btn-primary btn-block" style="margin-top:14px" onclick="saveShip()">Simpan Ongkir</button>
+        </div>
+        <div class="panel">
+          <h3 style="font-family:var(--serif);font-weight:500;font-size:1.3rem;margin-bottom:10px">Ganti Password</h3>
+          <label>Password Baru</label><input type="password" id="newPw" placeholder="Minimal 6 karakter"/>
+          <button class="btn btn-outline btn-block" style="margin-top:14px" onclick="changePw()">Ganti Password</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- MODAL PRODUK -->
+<div class="modal-bg" id="prodModal">
+  <div class="modal">
+    <h3 id="modalTitle">Tambah Produk</h3>
+    <input type="hidden" id="pId"/>
+    <label>Nama Produk *</label><input id="pName"/>
+    <label>Kategori</label><input id="pCat" placeholder="mis. Shampoo, Serum, Vitamin"/>
+    <div class="grid2">
+      <div><label>Harga (Rp) *</label><input id="pPrice" type="number" min="0"/></div>
+      <div><label>Stok *</label><input id="pStock" type="number" min="0"/></div>
+    </div>
+    <label>Deskripsi</label><textarea id="pDesc"></textarea>
+    <label>Foto Produk</label>
+    <div id="pImgPreview" style="margin:6px 0"></div>
+    <input type="file" id="pImg" accept="image/*"/>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:14px"><input type="checkbox" id="pActive" checked style="width:auto"/> Tampilkan di toko</label>
+    <div class="modal-actions">
+      <button class="btn btn-primary" style="flex:1" onclick="saveProduct()">Simpan</button>
+      <button class="btn btn-outline" onclick="closeProduct()">Batal</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="/js/img.js"></script>
+<script src="/js/admin.js"></script>
+</body>
+</html>

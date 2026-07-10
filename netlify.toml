@@ -1,0 +1,10 @@
+# Konfigurasi Netlify untuk Toko RR Hair Care
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+# Halaman utama & aset dilayani statis dari /public.
+# Rute /api/* ditangani oleh Netlify Functions (lihat config.path di tiap fungsi).
