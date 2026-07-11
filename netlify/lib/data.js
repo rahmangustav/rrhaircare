@@ -137,6 +137,10 @@ export async function deleteProduct(id) {
 // dibatalkan otomatis supaya stok tidak terkunci selamanya.
 export const ORDER_HOLD_MS = 24 * 3600e3; // 24 jam untuk bayar
 
+// Status pesanan yang sah (dipakai untuk memvalidasi input admin).
+export const ORDER_STATUSES = ['menunggu_pembayaran', 'menunggu_verifikasi',
+  'diproses', 'dikirim', 'selesai', 'batal'];
+
 export const getOrders = () => readJSON('orders', []);
 
 // Kembalikan stok produk untuk daftar item pesanan.
@@ -228,7 +232,7 @@ export async function expireStaleOrders() {
 // ── Analitik pengunjung (dihitung sendiri via Blobs) ──
 // Struktur blob 'analytics':
 //   { total:{views,visitors}, days:{ 'YYYY-MM-DD':{views,visitors} },
-//     pages:{ '/path':views }, firstAt, updatedAt }
+//     pages:{ '/path':views }, seen:{ day, ids:{} }, firstAt, updatedAt }
 const stats = () => getStore({ name: 'stats', consistency: 'strong' });
 const emptyStats = () => ({ total: { views: 0, visitors: 0 }, days: {}, pages: {}, firstAt: Date.now(), updatedAt: Date.now() });
 
@@ -237,12 +241,28 @@ function todayJakarta() {
   return new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
 }
 
-export async function recordHit({ path = '/', unique = false } = {}) {
+// Penanda pengunjung: IP di-hash bersama tanggal (tak menyimpan IP mentah).
+const VISITOR_SALT = 'rrhc-visitor';
+function visitorId(ip, day) {
+  if (!ip) return '';
+  return createHmac('sha256', VISITOR_SALT).update(day + '|' + ip).digest('hex').slice(0, 16);
+}
+
+// Keunikan pengunjung ditentukan SERVER dari IP, bukan dari klien (anti manipulasi).
+export async function recordHit({ path = '/', ip = '' } = {}) {
   const a = (await stats().get('analytics', { type: 'json' })) || emptyStats();
   const day = todayJakarta();
   a.days[day] = a.days[day] || { views: 0, visitors: 0 };
   a.total.views++; a.days[day].views++;
-  if (unique) { a.total.visitors++; a.days[day].visitors++; }
+
+  // Himpunan IP yang sudah tampil — hanya untuk hari berjalan, direset saat ganti hari.
+  if (!a.seen || a.seen.day !== day) a.seen = { day, ids: {} };
+  const id = visitorId(ip, day);
+  if (id && !a.seen.ids[id]) {
+    a.seen.ids[id] = 1;
+    a.total.visitors++; a.days[day].visitors++;
+  }
+
   const p = (path || '/').slice(0, 120);
   a.pages[p] = (a.pages[p] || 0) + 1;
   a.updatedAt = Date.now();
@@ -251,7 +271,9 @@ export async function recordHit({ path = '/', unique = false } = {}) {
 }
 
 export async function getStats() {
-  return (await stats().get('analytics', { type: 'json' })) || emptyStats();
+  const a = (await stats().get('analytics', { type: 'json' })) || emptyStats();
+  const { seen, ...rest } = a; // jangan kirim daftar IP ter-hash ke panel
+  return rest;
 }
 
 // ── Daftar Harga (layanan salon) ──
