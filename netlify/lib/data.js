@@ -25,6 +25,43 @@ export function verifyPassword(pw, stored) {
   return test.length === target.length && timingSafeEqual(test, target);
 }
 
+// ── Pembatas percobaan login (anti brute-force, per IP via Blobs) ──
+const LOGIN_MAX_FAILS = 5;            // gagal berturut sebelum dikunci
+const LOGIN_WINDOW_MS = 15 * 60e3;    // jendela penghitungan kegagalan
+const LOGIN_LOCK_MS = 15 * 60e3;      // lama kunci setelah batas tercapai
+
+// Cek status kunci untuk sebuah IP; panggil sebelum verifikasi password.
+export async function loginRateStatus(ip) {
+  const all = await readJSON('loginAttempts', {});
+  const rec = all[ip];
+  if (rec && rec.lockedUntil && rec.lockedUntil > Date.now())
+    return { blocked: true, retryAfter: Math.ceil((rec.lockedUntil - Date.now()) / 1000) };
+  return { blocked: false, retryAfter: 0 };
+}
+
+// Catat hasil login: sukses membersihkan hitungan, gagal menaikkannya.
+export async function noteLogin(ip, ok) {
+  const all = await readJSON('loginAttempts', {});
+  const now = Date.now();
+  // Buang entri IP yang sudah tidak relevan agar blob tidak membengkak.
+  for (const k of Object.keys(all)) {
+    const r = all[k];
+    const active = (r.lockedUntil && r.lockedUntil > now) ||
+      (r.firstAt && now - r.firstAt < LOGIN_WINDOW_MS);
+    if (!active) delete all[k];
+  }
+  if (ok) {
+    delete all[ip];
+  } else {
+    let r = all[ip];
+    if (!r || now - (r.firstAt || 0) > LOGIN_WINDOW_MS) r = { count: 0, firstAt: now };
+    r.count++;
+    if (r.count >= LOGIN_MAX_FAILS) r.lockedUntil = now + LOGIN_LOCK_MS;
+    all[ip] = r;
+  }
+  await writeJSON('loginAttempts', all);
+}
+
 // ── Token admin (HMAC, stateless) ──
 function b64url(buf) { return Buffer.from(buf).toString('base64url'); }
 export function signToken(secret, hours = 12) {
