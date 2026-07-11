@@ -119,6 +119,35 @@ export async function updateOrderByCode(code, patch) {
   await writeJSON('orders', list); return list[i];
 }
 
+// ── Analitik pengunjung (dihitung sendiri via Blobs) ──
+// Struktur blob 'analytics':
+//   { total:{views,visitors}, days:{ 'YYYY-MM-DD':{views,visitors} },
+//     pages:{ '/path':views }, firstAt, updatedAt }
+const stats = () => getStore({ name: 'stats', consistency: 'strong' });
+const emptyStats = () => ({ total: { views: 0, visitors: 0 }, days: {}, pages: {}, firstAt: Date.now(), updatedAt: Date.now() });
+
+function todayJakarta() {
+  // Tanggal 'YYYY-MM-DD' menurut zona Asia/Jakarta (WIB, UTC+7)
+  return new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
+}
+
+export async function recordHit({ path = '/', unique = false } = {}) {
+  const a = (await stats().get('analytics', { type: 'json' })) || emptyStats();
+  const day = todayJakarta();
+  a.days[day] = a.days[day] || { views: 0, visitors: 0 };
+  a.total.views++; a.days[day].views++;
+  if (unique) { a.total.visitors++; a.days[day].visitors++; }
+  const p = (path || '/').slice(0, 120);
+  a.pages[p] = (a.pages[p] || 0) + 1;
+  a.updatedAt = Date.now();
+  await stats().setJSON('analytics', a);
+  return a;
+}
+
+export async function getStats() {
+  return (await stats().get('analytics', { type: 'json' })) || emptyStats();
+}
+
 // ── Media (foto) — disimpan sebagai blob biner ──
 // Terima data URL base64 (mis. "data:image/jpeg;base64,...."), simpan, balikin URL /api/media/<key>.
 export async function saveMedia(dataUrl) {

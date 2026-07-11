@@ -41,7 +41,7 @@ function enterDash(){
   document.getElementById('loginView').style.display='none';
   document.getElementById('dash').style.display='block';
   document.getElementById('logoutBtn').style.display='inline';
-  loadProducts(); loadOrders(); loadSettings();
+  loadProducts(); loadOrders(); loadSettings(); loadStats();
 }
 
 // ── Tabs ──
@@ -180,6 +180,43 @@ async function loadOrders(){
 async function setStatus(id,status){
   try { await api(`/api/admin/orders/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
     toast('Status diperbarui'); loadOrders(); } catch(e){ toast(e.message); }
+}
+
+// ── Pengunjung / Statistik ──
+function ymd(d){ return new Date(d.getTime()+7*3600e3).toISOString().slice(0,10); } // WIB
+async function loadStats(){
+  let a;
+  try { a = await api('/api/admin/stats'); } catch(e){ return; }
+  const days = a.days||{}, total = a.total||{views:0,visitors:0};
+  const today = ymd(new Date());
+  const tv = (days[today]||{});
+  // 7 hari terakhir
+  let w7 = 0; for (let i=0;i<7;i++){ const k=ymd(new Date(Date.now()-i*864e5)); w7 += (days[k]||{}).visitors||0; }
+  document.getElementById('visitStats').innerHTML = `
+    <div class="stat"><div class="n">${total.visitors||0}</div><div class="l">Pengunjung (total)</div></div>
+    <div class="stat"><div class="n" style="color:var(--rose-gold)">${total.views||0}</div><div class="l">Kunjungan halaman</div></div>
+    <div class="stat"><div class="n" style="color:#1f5fb5">${tv.visitors||0}</div><div class="l">Pengunjung hari ini</div></div>
+    <div class="stat"><div class="n" style="color:#5b3fb5">${w7}</div><div class="l">Pengunjung 7 hari</div></div>`;
+  // Grafik 14 hari (bar)
+  const bars = [];
+  for (let i=13;i>=0;i--){ const dt=new Date(Date.now()-i*864e5); const k=ymd(dt);
+    bars.push({ k, label: dt.getDate()+'/'+(dt.getMonth()+1), v:(days[k]||{}).visitors||0 }); }
+  const max = Math.max(1, ...bars.map(b=>b.v));
+  document.getElementById('visitChart').innerHTML = bars.map(b=>{
+    const h = Math.round(b.v/max*130);
+    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px" title="${b.k}: ${b.v} pengunjung">
+      <div style="font-size:.7rem;color:var(--muted)">${b.v||''}</div>
+      <div style="width:100%;height:${h}px;min-height:2px;background:var(--rose-gold);border-radius:4px 4px 0 0;opacity:${b.v?1:.25}"></div>
+      <div style="font-size:.62rem;color:var(--muted)">${b.label}</div>
+    </div>`; }).join('');
+  document.getElementById('visitFirst').textContent = a.firstAt
+    ? 'Mulai mencatat sejak ' + new Date(a.firstAt).toLocaleString('id-ID')
+    : 'Belum ada kunjungan tercatat.';
+  // Halaman terpopuler
+  const pages = Object.entries(a.pages||{}).sort((x,y)=>y[1]-x[1]).slice(0,10);
+  document.getElementById('visitPages').innerHTML = pages.length
+    ? pages.map(([p,c])=>`<tr><td>${esc(p)}</td><td style="text-align:right">${c}</td></tr>`).join('')
+    : '<tr><td colspan="2" style="text-align:center;color:var(--muted);padding:20px">Belum ada data.</td></tr>';
 }
 
 // ── Pengaturan ──
