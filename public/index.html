@@ -388,6 +388,33 @@
       opacity: 0.8; transition: opacity 0.2s;
     }
     .lightbox-close:hover { opacity: 1; }
+    /* ── DAFTAR HARGA ── */
+    #harga { background: var(--soft-white); }
+    .price-wrap { max-width: 860px; margin: 0 auto; display: grid; gap: 40px; }
+    .price-cat h3 {
+      font-family: var(--serif); font-size: 1.5rem; font-weight: 500;
+      color: var(--charcoal); margin-bottom: 6px;
+      display: inline-block; padding-bottom: 8px;
+      border-bottom: 2px solid var(--rose-gold);
+    }
+    .price-row {
+      display: flex; align-items: baseline; gap: 12px;
+      padding: 12px 2px; border-bottom: 1px solid var(--line);
+    }
+    .price-row .pn { font-weight: 500; color: var(--charcoal); }
+    .price-row .pd { font-size: 0.74rem; color: var(--muted); font-style: italic; }
+    .price-row .leader { flex: 1 1 auto; min-width: 20px; border-bottom: 1px dotted var(--blush); transform: translateY(-5px); }
+    .price-row .pp {
+      white-space: nowrap; font-family: var(--serif);
+      font-size: 1.1rem; font-weight: 600; color: var(--charcoal);
+    }
+    .price-row .pp .was { color: var(--muted); text-decoration: line-through; font-size: 0.82rem; font-weight: 400; margin-right: 8px; }
+    .price-row .pp .now { color: #b0603f; }
+    .price-loading { text-align: center; color: var(--muted); grid-column: 1/-1; }
+    @media (max-width: 580px) {
+      .price-cat h3 { font-size: 1.3rem; }
+      .price-row .pp { font-size: 1rem; }
+    }
 
     /* ── TESTIMONIALS ── */
     #testimoni { background: var(--charcoal); }
@@ -678,6 +705,7 @@
     <li><a href="#layanan">Layanan</a></li>
     <li><a href="#tentang-kami">Tentang Kami</a></li>
     <li><a href="#galeri">Galeri</a></li>
+    <li><a href="#harga">Harga</a></li>
     <li><a href="#testimoni">Testimoni</a></li>
     <li><a href="#karir">Karir</a></li>
     <li><a href="#lokasi">Lokasi</a></li>
@@ -692,6 +720,7 @@
   <a href="#layanan" onclick="toggleMenu()">Layanan</a>
   <a href="#tentang-kami" onclick="toggleMenu()">Tentang Kami</a>
   <a href="#galeri" onclick="toggleMenu()">Galeri</a>
+  <a href="#harga" onclick="toggleMenu()">Harga</a>
   <a href="#testimoni" onclick="toggleMenu()">Testimoni</a>
   <a href="#karir" onclick="toggleMenu()">Karir</a>
   <a href="#lokasi" onclick="toggleMenu()">Lokasi</a>
@@ -844,6 +873,16 @@
     <div class="gallery-item"><div class="gallery-placeholder" style="font-size:0.75rem">Facial</div><div class="gallery-overlay"><span>Lihat</span></div></div>
     <div class="gallery-item"><div class="gallery-placeholder" style="font-size:0.75rem">Lulur</div><div class="gallery-overlay"><span>Lihat</span></div></div>
     <div class="gallery-item"><div class="gallery-placeholder" style="font-size:0.75rem">Highlight</div><div class="gallery-overlay"><span>Lihat</span></div></div>
+  </div>
+</section>
+
+<!-- DAFTAR HARGA -->
+<section id="harga">
+  <div class="section-label">Transparan &amp; Terjangkau</div>
+  <h2 class="section-title">Daftar <em>Harga</em></h2>
+  <p class="section-sub">Harga layanan salon RR Hair Care. Hubungi kami via WhatsApp untuk info promo terbaru.</p>
+  <div class="price-wrap fade-up" id="priceWrap">
+    <p class="price-loading">Memuat daftar harga…</p>
   </div>
 </section>
 
@@ -1172,6 +1211,7 @@
 </script>
 <script src="/js/hit.js" defer></script>
 <script src="/js/gallery.js" defer></script>
+<script src="/js/pricelist.js" defer></script>
 <script src="/js/lightbox.js" defer></script>
 </body>
 </html>

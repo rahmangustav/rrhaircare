@@ -41,7 +41,7 @@ function enterDash(){
   document.getElementById('loginView').style.display='none';
   document.getElementById('dash').style.display='block';
   document.getElementById('logoutBtn').style.display='inline';
-  loadProducts(); loadOrders(); loadSettings(); loadStats(); loadGallery(); loadSiteImages();
+  loadProducts(); loadOrders(); loadSettings(); loadStats(); loadGallery(); loadSiteImages(); loadPricelist();
 }
 
 // ── Tabs ──
@@ -293,6 +293,74 @@ document.getElementById('gImg')?.addEventListener('change', async function(){
   document.getElementById('gImgPreview').innerHTML = f
     ? `<img src="${await fileToDataURL(f)}" style="max-width:140px;border-radius:10px;border:1px solid var(--line)"/>` : '';
 });
+
+// ── Daftar Harga ──
+async function loadPricelist(){
+  let list;
+  try { list = await api('/api/admin/pricelist'); } catch(e){ return; }
+  document.getElementById('priceCount').textContent = list.length ? `${list.length} layanan` : '';
+  const body = document.getElementById('priceBody');
+  if (!list.length){ body.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:26px">Belum ada harga. Import CSV atau klik “Tambah Layanan”.</td></tr>'; return; }
+  body.innerHTML = list.map(h=>`<tr>
+    <td><b>${esc(h.name)}</b></td>
+    <td>${esc(h.category||'-')}</td>
+    <td>${rupiah(h.price)}</td>
+    <td>${h.promo?`<span style="color:#b0603f">${rupiah(h.promo)}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
+    <td style="color:var(--muted);font-size:.82rem">${esc(h.duration||'')}</td>
+    <td style="white-space:nowrap">
+      <button class="icon-btn" onclick='editPrice(${JSON.stringify(h)})'><i class="fa-solid fa-pen"></i></button>
+      <button class="icon-btn danger" onclick="delPrice('${h.id}','${esc(h.name)}')"><i class="fa-solid fa-trash-can"></i></button>
+    </td></tr>`).join('');
+}
+function openPrice(){
+  document.getElementById('priceModalTitle').textContent='Tambah Layanan';
+  ['hId','hName','hCat','hPrice','hPromo','hDur'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('priceModal').classList.add('show');
+}
+function editPrice(h){
+  document.getElementById('priceModalTitle').textContent='Edit Layanan';
+  document.getElementById('hId').value=h.id;
+  document.getElementById('hName').value=h.name||'';
+  document.getElementById('hCat').value=h.category||'';
+  document.getElementById('hPrice').value=h.price||0;
+  document.getElementById('hPromo').value=h.promo||'';
+  document.getElementById('hDur').value=h.duration||'';
+  document.getElementById('priceModal').classList.add('show');
+}
+function closePrice(){ document.getElementById('priceModal').classList.remove('show'); }
+async function savePrice(){
+  const id = document.getElementById('hId').value;
+  const name = document.getElementById('hName').value.trim();
+  const price = document.getElementById('hPrice').value;
+  if (!name || price===''){ toast('Nama & harga wajib diisi'); return; }
+  const body = {
+    name, category: document.getElementById('hCat').value.trim(),
+    price, promo: document.getElementById('hPromo').value || 0,
+    duration: document.getElementById('hDur').value.trim()
+  };
+  try {
+    await api(id? `/api/admin/pricelist/${id}` : '/api/admin/pricelist', { method: id?'PUT':'POST', body });
+    toast(id?'Layanan diperbarui':'Layanan ditambahkan'); closePrice(); loadPricelist();
+  } catch(e){ toast(e.message); }
+}
+async function delPrice(id,name){
+  if (!confirm(`Hapus "${name}" dari daftar harga?`)) return;
+  try { await api(`/api/admin/pricelist/${id}`,{method:'DELETE'}); toast('Layanan dihapus'); loadPricelist(); }
+  catch(e){ toast(e.message); }
+}
+async function importPriceCsv(){
+  const file = document.getElementById('priceCsvFile').files[0];
+  let csv = document.getElementById('priceCsvText').value.trim();
+  if (file) csv = await file.text();
+  if (!csv){ toast('Pilih file CSV atau tempel isinya'); return; }
+  if (!confirm('Import CSV akan MENGGANTI seluruh daftar harga yang ada. Lanjutkan?')) return;
+  try {
+    const res = await api('/api/admin/pricelist',{ method:'POST', body:{ csv } });
+    toast(`Berhasil import ${res.imported} layanan`);
+    document.getElementById('priceCsvFile').value=''; document.getElementById('priceCsvText').value='';
+    loadPricelist();
+  } catch(e){ toast(e.message); }
+}
 
 // ── Pengaturan ──
 let SHIP = [];

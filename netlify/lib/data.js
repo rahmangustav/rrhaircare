@@ -148,6 +148,81 @@ export async function getStats() {
   return (await stats().get('analytics', { type: 'json' })) || emptyStats();
 }
 
+// ── Daftar Harga (layanan salon) ──
+export const getPricelist = () => readJSON('pricelist', []);
+export const savePricelist = (list) => writeJSON('pricelist', list);
+const newPriceId = () => 'h_' + Date.now().toString(36) + randomBytes(3).toString('hex');
+
+function cleanPriceItem(p) {
+  return {
+    id: p.id || newPriceId(),
+    category: (p.category || 'Lainnya').toString().slice(0, 60),
+    name: (p.name || '').toString().slice(0, 120),
+    price: Number(p.price) || 0,
+    promo: Number(p.promo) || 0,
+    duration: (p.duration || '').toString().slice(0, 30),
+  };
+}
+export async function addPriceItem(p) {
+  const list = await getPricelist();
+  const item = cleanPriceItem(p);
+  list.push(item); await savePricelist(list); return item;
+}
+export async function updatePriceItem(id, patch) {
+  const list = await getPricelist();
+  const i = list.findIndex(x => x.id === id);
+  if (i < 0) return null;
+  list[i] = cleanPriceItem({ ...list[i], ...patch, id });
+  await savePricelist(list); return list[i];
+}
+export async function deletePriceItem(id) {
+  await savePricelist((await getPricelist()).filter(x => x.id !== id));
+}
+
+// Parser CSV export POS salon → daftar harga rapi.
+export function parsePricelistCsv(text) {
+  const lines = String(text || '').split(/\r?\n/).filter(l => l.trim());
+  if (!lines.length) return [];
+  const parseLine = (line) => {
+    const out = []; let cur = '', q = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (q) { if (c === '"') { if (line[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c; }
+      else { if (c === '"') q = true; else if (c === ',') { out.push(cur); cur = ''; } else cur += c; }
+    }
+    out.push(cur); return out;
+  };
+  const dec = (s) => String(s || '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\s+/g, ' ').trim();
+  const idr = (s) => parseInt(String(s || '').split(',')[0].replace(/[^\d]/g, ''), 10) || 0;
+  const header = parseLine(lines[0]).map(h => h.replace(/\s+/g, ' ').trim());
+  const col = (name) => header.indexOf(name);
+  const iType = col('Type'), iTreat = col('Treatment Name'), iGroup = col('Group Name'),
+        iItem = col('Item Name'), iRetail = col('Retail Price'), iSpecial = col('Special Price'), iDur = col('Duration');
+  if (iItem < 0 || iRetail < 0) return []; // format tak dikenali
+  const items = [];
+  for (let r = 1; r < lines.length; r++) {
+    const f = parseLine(lines[r]);
+    if (f.length <= iRetail) continue;
+    const name = dec(f[iItem]); if (!name) continue;
+    const price = idr(f[iRetail]); if (price <= 0) continue;
+    let cat = dec(f[iTreat]);
+    if (!cat || cat === 'Other') cat = dec(f[iGroup]);
+    if (f[iType] === 'Package') cat = 'Paket Layanan';
+    else if (!cat || cat === 'Paket Layanan') cat = 'Lainnya'; // add-on salah grup
+    if (cat === 'Coloring') cat = 'Coloring & Highlight';
+    const sp = idr(f[iSpecial]);
+    const promo = (sp > 0 && sp < price) ? sp : 0;
+    let dur = dec(iDur >= 0 ? f[iDur] : '');
+    items.push(cleanPriceItem({ category: cat, name, price, promo, duration: dur }));
+  }
+  return items;
+}
+export async function importPricelistCsv(text) {
+  const list = parsePricelistCsv(text);
+  await savePricelist(list);
+  return list;
+}
+
 // ── Galeri (foto hasil kerja di landing) ──
 export const getGallery = () => readJSON('gallery', []);
 export async function addGalleryPhoto(p) {
