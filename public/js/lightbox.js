@@ -23,16 +23,18 @@
     imgEl.src = '';
   }
 
-  // Delegasi klik: foto di dalam .gallery-item atau .about-img-wrapper
+  // Delegasi klik: klik kontainer galeri/foto (overlay galeri menutupi <img>,
+  // jadi target klik bisa overlay — ambil <img> dari kontainernya).
   document.addEventListener('click', function (e) {
-    var img = e.target.closest && e.target.closest('.gallery-item img, .about-img-wrapper img');
-    if (!img) return;
+    var container = e.target.closest && e.target.closest('.gallery-item, .about-img-wrapper');
+    if (!container) return;
+    var img = container.querySelector('img');
+    if (!img) return; // masih placeholder, belum ada foto
     e.preventDefault();
     // Ambil keterangan dari overlay galeri kalau ada, kalau tidak dari alt
     var cap = '';
-    var item = img.closest('.gallery-item');
-    if (item) {
-      var span = item.querySelector('.gallery-overlay span');
+    if (container.classList.contains('gallery-item')) {
+      var span = container.querySelector('.gallery-overlay span');
       if (span && span.textContent && span.textContent.trim() !== 'Lihat') cap = span.textContent.trim();
     }
     if (!cap && img.alt && img.alt !== 'RR Hair Care') cap = img.alt;
