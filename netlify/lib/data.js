@@ -148,6 +148,18 @@ export async function getStats() {
   return (await stats().get('analytics', { type: 'json' })) || emptyStats();
 }
 
+// ── Galeri (foto hasil kerja di landing) ──
+export const getGallery = () => readJSON('gallery', []);
+export async function addGalleryPhoto(p) {
+  const list = await getGallery();
+  const item = { id: 'g_' + Date.now().toString(36) + randomBytes(2).toString('hex'),
+    image: p.image || '', caption: (p.caption || '').slice(0, 80), createdAt: Date.now() };
+  list.unshift(item); await writeJSON('gallery', list); return item;
+}
+export async function deleteGalleryPhoto(id) {
+  await writeJSON('gallery', (await getGallery()).filter(g => g.id !== id));
+}
+
 // ── Media (foto) — disimpan sebagai blob biner ──
 // Terima data URL base64 (mis. "data:image/jpeg;base64,...."), simpan, balikin URL /api/media/<key>.
 export async function saveMedia(dataUrl) {

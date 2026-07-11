@@ -41,7 +41,7 @@ function enterDash(){
   document.getElementById('loginView').style.display='none';
   document.getElementById('dash').style.display='block';
   document.getElementById('logoutBtn').style.display='inline';
-  loadProducts(); loadOrders(); loadSettings(); loadStats();
+  loadProducts(); loadOrders(); loadSettings(); loadStats(); loadGallery();
 }
 
 // ── Tabs ──
@@ -218,6 +218,45 @@ async function loadStats(){
     ? pages.map(([p,c])=>`<tr><td>${esc(p)}</td><td style="text-align:right">${c}</td></tr>`).join('')
     : '<tr><td colspan="2" style="text-align:center;color:var(--muted);padding:20px">Belum ada data.</td></tr>';
 }
+
+// ── Galeri ──
+async function loadGallery(){
+  let list;
+  try { list = await api('/api/admin/gallery'); } catch(e){ return; }
+  const box = document.getElementById('galleryList');
+  if (!list.length){ box.innerHTML='<p class="help" style="grid-column:1/-1">Belum ada foto. Upload foto pertamamu di atas.</p>'; return; }
+  box.innerHTML = list.map(g=>`
+    <div style="border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff">
+      <div style="aspect-ratio:1/1;overflow:hidden"><img src="${g.image}" style="width:100%;height:100%;object-fit:cover"/></div>
+      <div style="padding:8px 10px">
+        <div style="font-size:.78rem;color:var(--charcoal);min-height:1.1em">${esc(g.caption||'')}</div>
+        <button class="icon-btn danger" style="margin-top:8px;width:100%" onclick="delGalleryPhoto('${g.id}')"><i class="fa-solid fa-trash-can"></i> Hapus</button>
+      </div>
+    </div>`).join('');
+}
+async function addGalleryPhoto(){
+  const f = document.getElementById('gImg').files[0];
+  if (!f){ toast('Pilih foto dulu'); return; }
+  const body = { caption: document.getElementById('gCaption').value.trim(), imageData: await fileToDataURL(f) };
+  try {
+    await api('/api/admin/gallery',{ method:'POST', body });
+    toast('Foto ditambahkan ke galeri');
+    document.getElementById('gImg').value=''; document.getElementById('gCaption').value='';
+    document.getElementById('gImgPreview').innerHTML='';
+    loadGallery();
+  } catch(e){ toast(e.message); }
+}
+async function delGalleryPhoto(id){
+  if (!confirm('Hapus foto ini dari galeri?')) return;
+  try { await api(`/api/admin/gallery/${id}`,{method:'DELETE'}); toast('Foto dihapus'); loadGallery(); }
+  catch(e){ toast(e.message); }
+}
+// Pratinjau foto saat dipilih
+document.getElementById('gImg')?.addEventListener('change', async function(){
+  const f = this.files[0];
+  document.getElementById('gImgPreview').innerHTML = f
+    ? `<img src="${await fileToDataURL(f)}" style="max-width:140px;border-radius:10px;border:1px solid var(--line)"/>` : '';
+});
 
 // ── Pengaturan ──
 let SHIP = [];

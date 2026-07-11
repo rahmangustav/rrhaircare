@@ -363,6 +363,8 @@
       font-style: italic; color: rgba(201,160,122,0.6);
       text-align: center; padding: 20px;
     }
+    .gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .gallery-overlay span { text-align: center; padding: 0 12px; }
 
     /* ── TESTIMONIALS ── */
     #testimoni { background: var(--charcoal); }
@@ -810,35 +812,18 @@
   <div class="section-label">Portfolio Karya Kami</div>
   <h2 class="section-title">Galeri <em>Hasil Kerja</em></h2>
   <p class="section-sub">Setiap karya adalah bukti nyata dari dedikasi stylist kami dalam menghadirkan hasil terbaik.</p>
-  <div class="gallery-grid fade-up">
+  <div class="gallery-grid fade-up" id="galleryGrid">
+    <!-- Diisi otomatis dari /api/gallery; placeholder di bawah tampil kalau belum ada foto -->
     <div class="gallery-item">
       <div class="gallery-placeholder"><i class="fas fa-image" style="font-size:2.5rem; display:block; margin-bottom:8px; opacity:0.3"></i>Featured Work</div>
       <div class="gallery-overlay"><span>Lihat Karya</span></div>
     </div>
-    <div class="gallery-item">
-      <div class="gallery-placeholder" style="font-size:0.75rem">Potong Rambut</div>
-      <div class="gallery-overlay"><span>Lihat</span></div>
-    </div>
-    <div class="gallery-item">
-      <div class="gallery-placeholder" style="font-size:0.75rem">Pewarnaan</div>
-      <div class="gallery-overlay"><span>Lihat</span></div>
-    </div>
-    <div class="gallery-item">
-      <div class="gallery-placeholder" style="font-size:0.75rem">Smoothing</div>
-      <div class="gallery-overlay"><span>Lihat</span></div>
-    </div>
-    <div class="gallery-item">
-      <div class="gallery-placeholder" style="font-size:0.75rem">Facial</div>
-      <div class="gallery-overlay"><span>Lihat</span></div>
-    </div>
-    <div class="gallery-item">
-      <div class="gallery-placeholder" style="font-size:0.75rem">Lulur</div>
-      <div class="gallery-overlay"><span>Lihat</span></div>
-    </div>
-    <div class="gallery-item">
-      <div class="gallery-placeholder" style="font-size:0.75rem">Highlight</div>
-      <div class="gallery-overlay"><span>Lihat</span></div>
-    </div>
+    <div class="gallery-item"><div class="gallery-placeholder" style="font-size:0.75rem">Potong Rambut</div><div class="gallery-overlay"><span>Lihat</span></div></div>
+    <div class="gallery-item"><div class="gallery-placeholder" style="font-size:0.75rem">Pewarnaan</div><div class="gallery-overlay"><span>Lihat</span></div></div>
+    <div class="gallery-item"><div class="gallery-placeholder" style="font-size:0.75rem">Smoothing</div><div class="gallery-overlay"><span>Lihat</span></div></div>
+    <div class="gallery-item"><div class="gallery-placeholder" style="font-size:0.75rem">Facial</div><div class="gallery-overlay"><span>Lihat</span></div></div>
+    <div class="gallery-item"><div class="gallery-placeholder" style="font-size:0.75rem">Lulur</div><div class="gallery-overlay"><span>Lihat</span></div></div>
+    <div class="gallery-item"><div class="gallery-placeholder" style="font-size:0.75rem">Highlight</div><div class="gallery-overlay"><span>Lihat</span></div></div>
   </div>
 </section>
 
@@ -1159,5 +1144,6 @@
   }
 </script>
 <script src="/js/hit.js" defer></script>
+<script src="/js/gallery.js" defer></script>
 </body>
 </html>
