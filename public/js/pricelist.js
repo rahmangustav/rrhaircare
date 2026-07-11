@@ -43,6 +43,23 @@
       }).join('');
       return '<div class="price-cat"><h3>' + esc(cat) + '</h3>' + rows + '</div>';
     }).join('');
+
+    // Isi dropdown Layanan di form Booking (nama + harga), kelompok per kategori.
+    var sel = document.getElementById('layanan-select');
+    if (sel) {
+      var opts = '<option value="">-- Pilih Layanan --</option>';
+      cats.forEach(function (cat) {
+        if (cat === 'Lainnya') return; // add-on kecil, tak perlu di booking
+        opts += '<optgroup label="' + esc(cat) + '">';
+        groups[cat].forEach(function (it) {
+          var harga = (it.promo && it.promo < it.price) ? it.promo : it.price;
+          var label = it.name + ' — ' + rupiah(harga);
+          opts += '<option value="' + esc(label) + '">' + esc(label) + '</option>';
+        });
+        opts += '</optgroup>';
+      });
+      sel.innerHTML = opts;
+    }
   }).catch(function () {
     wrap.innerHTML = '<p class="price-loading">Gagal memuat daftar harga.</p>';
   });
