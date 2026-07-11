@@ -11,7 +11,10 @@ export default async (req, context) => {
     const key = (b.key || '').trim();
     if (!key) return json({ error: 'Slot foto wajib diisi' }, 400);
     let image = b.image || '';
-    if (b.imageData) image = await saveMedia(b.imageData);
+    if (b.imageData) {
+      try { image = await saveMedia(b.imageData); }
+      catch (e) { return json({ error: 'Ukuran gambar terlalu besar (maks 4 MB)' }, 413); }
+    }
     if (!image) return json({ error: 'Foto wajib diunggah' }, 400);
     return json(await setSiteImage(key, image));
   }

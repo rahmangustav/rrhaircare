@@ -3,7 +3,9 @@ import { updateOrderByCode, saveMedia, json } from '../lib/data.js';
 export default async (req, context) => {
   if (req.method !== 'POST') return json({ error: 'Method tidak didukung' }, 405);
   const { proof } = await req.json().catch(() => ({}));
-  const url = await saveMedia(proof);
+  let url;
+  try { url = await saveMedia(proof); }
+  catch (e) { return json({ error: 'Ukuran gambar terlalu besar (maks 4 MB)' }, 413); }
   if (!url) return json({ error: 'File bukti tidak valid' }, 400);
   const o = await updateOrderByCode(context.params.code, { paymentProof: url, status: 'menunggu_verifikasi' });
   if (!o) return json({ error: 'Pesanan tidak ditemukan' }, 404);

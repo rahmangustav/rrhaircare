@@ -15,7 +15,10 @@ export default async (req) => {
     if (b.whatsapp !== undefined) patch.whatsapp = b.whatsapp;
     if (b.bankInfo !== undefined) patch.bankInfo = b.bankInfo;
     if (Array.isArray(b.shippingOptions)) patch.shippingOptions = b.shippingOptions;
-    if (b.qrisData) patch.qrisImage = await saveMedia(b.qrisData);
+    if (b.qrisData) {
+      try { patch.qrisImage = await saveMedia(b.qrisData); }
+      catch (e) { return json({ error: 'Ukuran gambar terlalu besar (maks 4 MB)' }, 413); }
+    }
     if (b.newPassword) patch.adminPassword = hashPassword(b.newPassword);
     const { adminPassword, authSecret, ...rest } = await saveSettings(patch);
     return json({ ok: true, settings: rest });

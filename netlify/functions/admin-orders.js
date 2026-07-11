@@ -1,9 +1,9 @@
-import { requireAuth, getOrders, updateOrder, json } from '../lib/data.js';
+import { requireAuth, getOrders, updateOrder, expireStaleOrders, json } from '../lib/data.js';
 
 export default async (req, context) => {
   if (!(await requireAuth(req))) return json({ error: 'Perlu login admin' }, 401);
 
-  if (req.method === 'GET') return json(await getOrders());
+  if (req.method === 'GET') return json(await expireStaleOrders());
 
   if (req.method === 'PUT') {
     const b = await req.json().catch(() => ({}));

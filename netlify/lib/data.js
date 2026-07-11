@@ -95,28 +95,97 @@ export async function deleteProduct(id) {
 }
 
 // ── Pesanan ──
+// Stok dipotong saat order dibuat (menahan barang). Kalau order dibatalkan
+// stok dikembalikan; order 'menunggu_pembayaran' yang lewat batas waktu
+// dibatalkan otomatis supaya stok tidak terkunci selamanya.
+export const ORDER_HOLD_MS = 24 * 3600e3; // 24 jam untuk bayar
+
 export const getOrders = () => readJSON('orders', []);
+
+// Kembalikan stok produk untuk daftar item pesanan.
+async function restoreStockFor(items) {
+  if (!Array.isArray(items) || !items.length) return;
+  const products = await getProducts();
+  let touched = false;
+  for (const it of items) {
+    const p = products.find(x => x.id === it.id);
+    if (p) { p.stock = (Number(p.stock) || 0) + (Number(it.qty) || 0); touched = true; }
+  }
+  if (touched) await saveProducts(products);
+}
+// Potong ulang stok (dipakai kalau order batal diaktifkan lagi oleh admin).
+async function deductStockFor(items) {
+  if (!Array.isArray(items) || !items.length) return;
+  const products = await getProducts();
+  let touched = false;
+  for (const it of items) {
+    const p = products.find(x => x.id === it.id);
+    if (p) { p.stock = Math.max(0, (Number(p.stock) || 0) - (Number(it.qty) || 0)); touched = true; }
+  }
+  if (touched) await saveProducts(products);
+}
+// Sesuaikan stok mengikuti perpindahan status; menandai `next.stockReturned`.
+async function applyStockTransition(before, next) {
+  const wasCanceled = before.status === 'batal';
+  const nowCanceled = next.status === 'batal';
+  if (!wasCanceled && nowCanceled && !before.stockReturned) {
+    await restoreStockFor(before.items);
+    next.stockReturned = true;
+  } else if (wasCanceled && !nowCanceled && before.stockReturned) {
+    await deductStockFor(before.items);
+    next.stockReturned = false;
+  }
+}
+
 export async function addOrder(o) {
   const list = await getOrders();
   const code = 'RR' + new Date().toISOString().slice(2, 10).replace(/-/g, '') +
     '-' + randomBytes(2).toString('hex').toUpperCase();
   const order = { id: 'o_' + Date.now().toString(36), code, ...o,
-    status: 'menunggu_pembayaran', createdAt: Date.now() };
+    status: 'menunggu_pembayaran', stockReturned: false, createdAt: Date.now() };
   list.unshift(order); await writeJSON('orders', list); return order;
 }
 export async function updateOrder(id, patch) {
   const list = await getOrders();
   const i = list.findIndex(o => o.id === id);
   if (i < 0) return null;
-  list[i] = { ...list[i], ...patch };
+  const next = { ...list[i], ...patch };
+  await applyStockTransition(list[i], next);
+  list[i] = next;
   await writeJSON('orders', list); return list[i];
 }
 export async function updateOrderByCode(code, patch) {
   const list = await getOrders();
   const i = list.findIndex(o => o.code === code);
   if (i < 0) return null;
-  list[i] = { ...list[i], ...patch };
+  const next = { ...list[i], ...patch };
+  await applyStockTransition(list[i], next);
+  list[i] = next;
   await writeJSON('orders', list); return list[i];
+}
+
+// Batalkan otomatis order yang telat bayar & kembalikan stoknya.
+// Dipanggil "lazy" saat daftar order dibaca / order baru dibuat.
+export async function expireStaleOrders() {
+  const list = await getOrders();
+  const now = Date.now();
+  const toRestore = [];
+  let changed = false;
+  for (const o of list) {
+    if (o.status === 'menunggu_pembayaran' && !o.stockReturned &&
+        (now - (o.createdAt || 0)) > ORDER_HOLD_MS) {
+      o.status = 'batal';
+      o.stockReturned = true;
+      o.autoCanceled = true;
+      if (Array.isArray(o.items)) toRestore.push(...o.items);
+      changed = true;
+    }
+  }
+  if (changed) {
+    await writeJSON('orders', list);
+    await restoreStockFor(toRestore);
+  }
+  return list;
 }
 
 // ── Analitik pengunjung (dihitung sendiri via Blobs) ──
@@ -247,11 +316,15 @@ export async function deleteSiteImage(key) {
 
 // ── Media (foto) — disimpan sebagai blob biner ──
 // Terima data URL base64 (mis. "data:image/jpeg;base64,...."), simpan, balikin URL /api/media/<key>.
+export const MAX_MEDIA_BYTES = 4 * 1024 * 1024; // batas ~4 MB per gambar
 export async function saveMedia(dataUrl) {
   const m = /^data:(image\/[a-zA-Z+]+);base64,(.+)$/s.exec(dataUrl || '');
   if (!m) return '';
   const contentType = m[1];
   const buf = Buffer.from(m[2], 'base64');
+  if (buf.length > MAX_MEDIA_BYTES) {
+    const e = new Error('MEDIA_TOO_LARGE'); e.code = 'MEDIA_TOO_LARGE'; throw e;
+  }
   const ext = contentType.split('/')[1].replace('jpeg', 'jpg').replace('+xml', '');
   const key = Date.now().toString(36) + randomBytes(3).toString('hex') + '.' + ext;
   await media().set(key, buf, { metadata: { contentType } });

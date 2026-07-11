@@ -1,4 +1,4 @@
-import { getProducts, saveProducts, getSettings, addOrder, json } from '../lib/data.js';
+import { getProducts, saveProducts, getSettings, addOrder, expireStaleOrders, json } from '../lib/data.js';
 
 export default async (req) => {
   if (req.method !== 'POST') return json({ error: 'Method tidak didukung' }, 405);
@@ -7,6 +7,8 @@ export default async (req) => {
   if (!customer || !customer.name || !customer.phone || !customer.address)
     return json({ error: 'Data pengiriman belum lengkap' }, 400);
 
+  // Bebaskan dulu stok dari order telat bayar sebelum cek ketersediaan.
+  await expireStaleOrders();
   const products = await getProducts();
   const settings = await getSettings();
   let subtotal = 0;

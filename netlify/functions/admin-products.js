@@ -15,7 +15,10 @@ export default async (req, context) => {
     const b = await req.json().catch(() => ({}));
     const fields = { name: b.name, category: b.category, price: b.price, stock: b.stock,
       description: b.description, active: b.active !== false && b.active !== 'false' };
-    if (b.imageData) fields.image = await saveMedia(b.imageData);
+    if (b.imageData) {
+      try { fields.image = await saveMedia(b.imageData); }
+      catch (e) { return json({ error: 'Ukuran gambar terlalu besar (maks 4 MB)' }, 413); }
+    }
 
     if (req.method === 'POST') {
       if (!fields.name) return json({ error: 'Nama produk wajib diisi' }, 400);
