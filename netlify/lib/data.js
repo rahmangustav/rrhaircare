@@ -160,6 +160,16 @@ export async function deleteGalleryPhoto(id) {
   await writeJSON('gallery', (await getGallery()).filter(g => g.id !== id));
 }
 
+// ── Foto tetap per bagian halaman (slot bernama, mis. 'about') ──
+// Disimpan sebagai objek { slot: urlMedia }, dipakai untuk foto yang sering diganti.
+export const getSiteImages = () => readJSON('siteImages', {});
+export async function setSiteImage(key, url) {
+  const m = await getSiteImages(); m[key] = url; await writeJSON('siteImages', m); return m;
+}
+export async function deleteSiteImage(key) {
+  const m = await getSiteImages(); delete m[key]; await writeJSON('siteImages', m); return m;
+}
+
 // ── Media (foto) — disimpan sebagai blob biner ──
 // Terima data URL base64 (mis. "data:image/jpeg;base64,...."), simpan, balikin URL /api/media/<key>.
 export async function saveMedia(dataUrl) {

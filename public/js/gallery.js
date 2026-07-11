@@ -14,4 +14,13 @@
         '<div class="gallery-overlay">' + cap + '</div></div>';
     }).join('');
   }).catch(function () {});
+
+  // Foto tetap per bagian halaman (mis. slot "about" = Foto Rani & Ratih)
+  fetch('/api/site-images').then(function (r) { return r.json(); }).then(function (imgs) {
+    if (!imgs || typeof imgs !== 'object') return;
+    document.querySelectorAll('[data-slot]').forEach(function (el) {
+      var url = imgs[el.getAttribute('data-slot')];
+      if (url) el.innerHTML = '<img src="' + esc(url) + '" alt="RR Hair Care" loading="lazy"/>';
+    });
+  }).catch(function () {});
 })();

@@ -41,7 +41,7 @@ function enterDash(){
   document.getElementById('loginView').style.display='none';
   document.getElementById('dash').style.display='block';
   document.getElementById('logoutBtn').style.display='inline';
-  loadProducts(); loadOrders(); loadSettings(); loadStats(); loadGallery();
+  loadProducts(); loadOrders(); loadSettings(); loadStats(); loadGallery(); loadSiteImages();
 }
 
 // ── Tabs ──
@@ -251,6 +251,42 @@ async function delGalleryPhoto(id){
   try { await api(`/api/admin/gallery/${id}`,{method:'DELETE'}); toast('Foto dihapus'); loadGallery(); }
   catch(e){ toast(e.message); }
 }
+// ── Foto Bagian Halaman (slot tetap) ──
+// Daftar slot yang bisa diganti fotonya. Tambah entri di sini untuk slot baru.
+const SITE_IMG_SLOTS = [
+  { key:'about', label:'“Kisah di Balik RR Hair Care” — Foto Rani & Ratih' }
+];
+async function loadSiteImages(){
+  let imgs;
+  try { imgs = await api('/api/admin/site-images'); } catch(e){ return; }
+  const box = document.getElementById('siteImgList');
+  box.innerHTML = SITE_IMG_SLOTS.map(s=>{
+    const url = imgs[s.key];
+    const preview = url
+      ? `<div style="aspect-ratio:3/4;max-height:220px;overflow:hidden;border-radius:10px;border:1px solid var(--line)"><img src="${url}" style="width:100%;height:100%;object-fit:cover"/></div>`
+      : `<div style="aspect-ratio:3/4;max-height:220px;display:flex;align-items:center;justify-content:center;border-radius:10px;border:1px dashed var(--line);color:var(--muted);font-size:.8rem">Belum ada foto</div>`;
+    return `<div>
+      <div style="font-size:.82rem;font-weight:600;margin-bottom:8px">${esc(s.label)}</div>
+      ${preview}
+      <input type="file" accept="image/*" style="margin-top:10px" onchange="setSiteImage('${s.key}',this)"/>
+      ${url?`<button class="icon-btn danger" style="margin-top:8px;width:100%" onclick="delSiteImage('${s.key}')"><i class="fa-solid fa-trash-can"></i> Hapus Foto</button>`:''}
+    </div>`;
+  }).join('');
+}
+async function setSiteImage(key, input){
+  const f = input.files[0];
+  if (!f) return;
+  try {
+    await api('/api/admin/site-images',{ method:'POST', body:{ key, imageData: await fileToDataURL(f) } });
+    toast('Foto diperbarui'); loadSiteImages();
+  } catch(e){ toast(e.message); }
+}
+async function delSiteImage(key){
+  if (!confirm('Hapus foto ini? Bagian itu akan kembali ke placeholder.')) return;
+  try { await api(`/api/admin/site-images/${key}`,{method:'DELETE'}); toast('Foto dihapus'); loadSiteImages(); }
+  catch(e){ toast(e.message); }
+}
+
 // Pratinjau foto saat dipilih
 document.getElementById('gImg')?.addEventListener('change', async function(){
   const f = this.files[0];
