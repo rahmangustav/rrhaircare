@@ -331,19 +331,14 @@
     #galeri { background: var(--ivory); }
     .gallery-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      grid-template-rows: auto auto;
-      gap: 8px; max-width: 1080px; margin: 0 auto;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 10px; max-width: 1080px; margin: 0 auto;
     }
     .gallery-item {
       background: linear-gradient(135deg, var(--blush) 0%, #d4b9a0 100%);
       aspect-ratio: 1/1;
       display: flex; align-items: center; justify-content: center;
       overflow: hidden; cursor: pointer; position: relative;
-    }
-    .gallery-item:first-child {
-      grid-column: span 2; grid-row: span 2;
-      aspect-ratio: unset;
     }
     .gallery-overlay {
       position: absolute; inset: 0;
@@ -652,8 +647,6 @@
       .about-inner { grid-template-columns: 1fr; }
       .about-badge { right: 0; }
       .testi-grid { grid-template-columns: 1fr; }
-      .gallery-grid { grid-template-columns: repeat(2, 1fr); }
-      .gallery-item:first-child { grid-column: span 2; }
       .footer-inner { grid-template-columns: 1fr; gap: 36px; }
       .map-info { grid-template-columns: 1fr; }
       .karir-grid { grid-template-columns: 1fr; }
@@ -664,8 +657,7 @@
       .services-grid { grid-template-columns: 1fr; }
       .form-row { grid-template-columns: 1fr; }
       .founders { grid-template-columns: 1fr; }
-      .gallery-grid { grid-template-columns: 1fr; }
-      .gallery-item:first-child { grid-column: span 1; }
+      .gallery-grid { grid-template-columns: repeat(2, 1fr); }
       .footer-bottom { flex-direction: column; text-align: center; }
     }
 
