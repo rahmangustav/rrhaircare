@@ -390,13 +390,29 @@
     .lightbox-close:hover { opacity: 1; }
     /* ── DAFTAR HARGA ── */
     #harga { background: var(--soft-white); }
-    .price-wrap { max-width: 860px; margin: 0 auto; display: grid; gap: 40px; }
-    .price-cat h3 {
+    .price-wrap { max-width: 860px; margin: 0 auto; display: grid; gap: 14px; }
+    /* Akordeon per kategori (details/summary) supaya halaman tetap ringkas */
+    details.price-cat {
+      background: #fff; border: 1px solid var(--line); border-radius: 12px;
+      padding: 0 20px; transition: box-shadow 0.25s;
+    }
+    details.price-cat[open] { box-shadow: 0 8px 22px rgba(0, 0, 0, 0.06); }
+    .price-cat summary {
+      display: flex; align-items: center; gap: 14px;
+      padding: 18px 2px; cursor: pointer; list-style: none;
+    }
+    .price-cat summary::-webkit-details-marker { display: none; }
+    .price-cat summary h3 {
       font-family: var(--serif); font-size: 1.5rem; font-weight: 500;
-      color: var(--charcoal); margin-bottom: 6px;
-      display: inline-block; padding-bottom: 8px;
+      color: var(--charcoal); margin: 0;
+      display: inline-block; padding-bottom: 4px;
       border-bottom: 2px solid var(--rose-gold);
     }
+    .price-cat .pc-count { margin-left: auto; font-size: 0.78rem; color: var(--muted); white-space: nowrap; }
+    .price-cat .pc-chev { color: var(--rose-gold); font-size: 0.95rem; transition: transform 0.25s; }
+    details.price-cat[open] .pc-chev { transform: rotate(180deg); }
+    .pc-items { padding: 0 2px 16px; }
+    .pc-items .price-row:last-child { border-bottom: none; }
     .price-row {
       display: flex; align-items: baseline; gap: 12px;
       padding: 12px 2px; border-bottom: 1px solid var(--line);
@@ -412,8 +428,9 @@
     .price-row .pp .now { color: #b0603f; }
     .price-loading { text-align: center; color: var(--muted); grid-column: 1/-1; }
     @media (max-width: 580px) {
-      .price-cat h3 { font-size: 1.3rem; }
+      .price-cat summary h3 { font-size: 1.15rem; }
       .price-row .pp { font-size: 1rem; }
+      details.price-cat { padding: 0 14px; }
     }
 
     /* ── TESTIMONIALS ── */

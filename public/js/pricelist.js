@@ -41,7 +41,13 @@
           '<span class="pp">' + priceHtml + '</span>' +
           '</div>';
       }).join('');
-      return '<div class="price-cat"><h3>' + esc(cat) + '</h3>' + rows + '</div>';
+      // Akordeon: kategori tertutup secara default supaya halaman tidak memanjang.
+      return '<details class="price-cat">' +
+        '<summary><h3>' + esc(cat) + '</h3>' +
+        '<span class="pc-count">' + groups[cat].length + ' layanan</span>' +
+        '<span class="pc-chev" aria-hidden="true">&#9662;</span></summary>' +
+        '<div class="pc-items">' + rows + '</div>' +
+        '</details>';
     }).join('');
 
     // Isi dropdown Layanan di form Booking (nama + harga), kelompok per kategori.
