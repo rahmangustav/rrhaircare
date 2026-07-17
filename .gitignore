@@ -4,3 +4,15 @@ node_modules/
 dev.log
 *.log
 .DS_Store
+
+# Kredensial Google (akun RR Hair Care) — JANGAN pernah di-commit/deploy
+google/client_secrets*.json
+google/token.json
+google/.oauth_pending.json
+google/.venv/
+google/data/
+__pycache__/
+
+# Dokumen bisnis internal — repo ini PUBLIK, jangan pernah di-commit
+Audit-*.pdf
+JADWAL-INSTAGRAM.md

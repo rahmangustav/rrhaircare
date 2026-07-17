@@ -1,0 +1,20 @@
+CARA MASUKKAN DAFTAR HARGA
+==========================
+
+1. Copy file CSV daftar hargamu KE DALAM folder ini.
+   (Di ChromeOS: buka aplikasi Files -> Linux files -> rr-haircare-shop -> csv,
+    lalu tempel/paste file CSV-mu di sini.)
+
+2. Kasih nama filenya: harga.csv
+   (Kalau namanya lain juga tidak apa-apa, asal berakhiran .csv —
+    nanti saya cari otomatis.)
+
+3. Balik ke chat, bilang "sudah aku copy", nanti saya baca & bikin
+   tabel harganya di website.
+
+CATATAN FORMAT (lihat contoh: contoh-harga.csv):
+- Baris pertama = judul kolom, contoh: Kategori,Layanan,Harga
+- Kolom boleh apa saja — kalau berbeda dari contoh, tetap saya sesuaikan.
+- Harga boleh ditulis 50000 atau 50.000 atau "Rp50.000", semua bisa saya rapikan.
+
+Tidak perlu pusing rapi atau tidak — kirim apa adanya, saya yang bereskan.

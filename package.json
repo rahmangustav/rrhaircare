@@ -1,10 +1,16 @@
 {
-  "name": "rrhaircare",
+  "name": "rr-haircare-shop",
   "version": "1.0.0",
-  "description": "RR Hair Care — landing + toko online (Netlify Functions + Blobs)",
+  "description": "Toko online RR Hair Care — Netlify (QRIS manual + ongkir flat)",
   "type": "module",
+  "scripts": {
+    "dev": "netlify dev --offline --port 8888"
+  },
   "license": "UNLICENSED",
   "dependencies": {
     "@netlify/blobs": "^8.2.0"
+  },
+  "devDependencies": {
+    "netlify-cli": "^26.2.0"
   }
 }
