@@ -13,6 +13,16 @@
       var q = new URLSearchParams(location.search);
       campaign = q.get('utm_source') || q.get('src') || '';
     } catch (e) {}
+    // Simpan asal MASUK sesi ini supaya goal.js bisa memberi tahu server
+    // dari mana orang yang akhirnya klik booking itu datang. Ditulis sekali
+    // per sesi; halaman berikutnya tidak menimpanya.
+    try {
+      if (!sessionStorage.getItem('rr_entry')) {
+        sessionStorage.setItem('rr_entry', JSON.stringify({
+          ref: document.referrer || '', campaign: campaign,
+        }));
+      }
+    } catch (e) {}
     fetch('/api/hit', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },

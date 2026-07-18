@@ -6,6 +6,11 @@
   <title>RR Hair Care — Salon Perawatan Rambut Premium</title>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <!-- Penanda "JavaScript hidup". Animasi muncul-perlahan baru boleh
+       menyembunyikan konten kalau penanda ini ada — kalau JS mati atau gagal,
+       konten tetap terlihat. Harus di <head> dan tanpa defer supaya kelasnya
+       terpasang sebelum halaman dilukis (kalau tidak, konten sempat berkedip). -->
+  <script>document.documentElement.className += ' js';</script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -706,11 +711,23 @@
     }
 
     /* ── ANIMATIONS ── */
-    .fade-up {
+    /* Konten TERLIHAT sebagai keadaan bawaan. Sebelumnya opacity:0 yang jadi
+       bawaan dan kelas .visible cuma dipasang JavaScript — artinya kalau JS
+       mati, gagal, atau observer tak pernah menyala, 11 blok halaman ini
+       (termasuk form booking) hilang permanen tanpa jejak. */
+    .fade-up { opacity: 1; transform: none; }
+
+    /* Baru disembunyikan kalau JS terbukti hidup, supaya animasinya jalan. */
+    html.js .fade-up {
       opacity: 0; transform: translateY(28px);
       transition: opacity 0.65s ease, transform 0.65s ease;
     }
-    .fade-up.visible { opacity: 1; transform: translateY(0); }
+    html.js .fade-up.visible { opacity: 1; transform: translateY(0); }
+
+    /* Hormati setelan "kurangi animasi" di perangkat pengunjung. */
+    @media (prefers-reduced-motion: reduce) {
+      html.js .fade-up { opacity: 1; transform: none; transition: none; }
+    }
   </style>
 </head>
 <body>
@@ -1040,7 +1057,7 @@
       <div class="karir-title">Hair Stylist Profesional</div>
       <span class="karir-type">Full Time · Jakarta Utara</span>
       <p class="karir-req">Berpengalaman minimal 1 tahun di bidang hair styling. Menguasai teknik potong, catok, dan coloring. Ramah, komunikatif, dan berorientasi pada kepuasan pelanggan.</p>
-      <a href="https://wa.me/6281386291552?text=Halo%20RR%20Hair%20Care%2C%20saya%20tertarik%20melamar%20posisi%20Hair%20Stylist%20Profesional." target="_blank" class="btn-karir">
+      <a href="https://wa.me/6281386291552?text=Halo%20RR%20Hair%20Care%2C%20saya%20tertarik%20melamar%20posisi%20Hair%20Stylist%20Profesional." target="_blank" class="btn-karir" data-wa="karir">
         <i class="fab fa-whatsapp"></i> Lamar Sekarang
       </a>
     </div>
@@ -1048,7 +1065,7 @@
       <div class="karir-title">Beauty Therapist</div>
       <span class="karir-type">Full Time · Jakarta Utara</span>
       <p class="karir-req">Berpengalaman dalam facial, massage, dan lulur body treatment. Memiliki sertifikat kecantikan atau perawatan tubuh. Sabar dan teliti dalam melayani pelanggan.</p>
-      <a href="https://wa.me/6281386291552?text=Halo%20RR%20Hair%20Care%2C%20saya%20tertarik%20melamar%20posisi%20Beauty%20Therapist." target="_blank" class="btn-karir">
+      <a href="https://wa.me/6281386291552?text=Halo%20RR%20Hair%20Care%2C%20saya%20tertarik%20melamar%20posisi%20Beauty%20Therapist." target="_blank" class="btn-karir" data-wa="karir">
         <i class="fab fa-whatsapp"></i> Lamar Sekarang
       </a>
     </div>
@@ -1056,7 +1073,7 @@
       <div class="karir-title">Content Creator</div>
       <span class="karir-type">Part Time / Full Time · Jakarta Utara</span>
       <p class="karir-req">Kreatif, paham dunia konten digital, dan bisa mengoperasikan kamera serta editing video. Familiar dengan TikTok dan Instagram. Portofolio menjadi nilai plus.</p>
-      <a href="https://wa.me/6281386291552?text=Halo%20RR%20Hair%20Care%2C%20saya%20tertarik%20melamar%20posisi%20Content%20Creator." target="_blank" class="btn-karir">
+      <a href="https://wa.me/6281386291552?text=Halo%20RR%20Hair%20Care%2C%20saya%20tertarik%20melamar%20posisi%20Content%20Creator." target="_blank" class="btn-karir" data-wa="karir">
         <i class="fab fa-whatsapp"></i> Lamar Sekarang
       </a>
     </div>
@@ -1064,7 +1081,7 @@
       <div class="karir-title">Resepsionis & Admin Salon</div>
       <span class="karir-type">Full Time · Jakarta Utara</span>
       <p class="karir-req">Berpenampilan menarik, komunikatif, dan bisa mengoperasikan komputer dasar. Bertanggung jawab atas penjadwalan, pelayanan tamu, dan administrasi harian salon.</p>
-      <a href="https://wa.me/6281386291552?text=Halo%20RR%20Hair%20Care%2C%20saya%20tertarik%20melamar%20posisi%20Resepsionis." target="_blank" class="btn-karir">
+      <a href="https://wa.me/6281386291552?text=Halo%20RR%20Hair%20Care%2C%20saya%20tertarik%20melamar%20posisi%20Resepsionis." target="_blank" class="btn-karir" data-wa="karir">
         <i class="fab fa-whatsapp"></i> Lamar Sekarang
       </a>
     </div>
@@ -1093,7 +1110,7 @@
       <div class="map-info-item">
         <div class="map-info-label">Kontak</div>
         <div class="map-info-value">
-          <a href="https://wa.me/6281386291552" target="_blank" style="color:var(--rose-gold); text-decoration:none;">
+          <a href="https://wa.me/6281386291552" target="_blank" data-wa="lokasi" style="color:var(--rose-gold); text-decoration:none;">
             0813-8629-1552
           </a>
         </div>
@@ -1119,7 +1136,7 @@
         <a href="https://www.youtube.com/@rrhaircare_" target="_blank" class="footer-social">
           <i class="fab fa-youtube"></i>
         </a>
-        <a href="https://wa.me/6281386291552" target="_blank" class="footer-social">
+        <a href="https://wa.me/6281386291552" target="_blank" class="footer-social" data-wa="footer">
           <i class="fab fa-whatsapp"></i>
         </a>
       </div>
@@ -1157,7 +1174,7 @@
 </footer>
 
 <!-- FLOATING WA -->
-<a href="https://wa.me/6281386291552?text=Halo%20RR%20Hair%20Care%2C%20saya%20ingin%20bertanya%20tentang%20layanan%20dan%20booking." target="_blank" class="wa-float" title="Chat via WhatsApp">
+<a href="https://wa.me/6281386291552?text=Halo%20RR%20Hair%20Care%2C%20saya%20ingin%20bertanya%20tentang%20layanan%20dan%20booking." target="_blank" class="wa-float" title="Chat via WhatsApp" data-wa="float">
   <i class="fab fa-whatsapp"></i>
 </a>
 
@@ -1187,6 +1204,22 @@
     entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
   }, { threshold: 0.1 });
   document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+  // Jaring pengaman. Kalau halaman dimuat sementara tab ada di latar belakang,
+  // Chrome membekukan pipeline render: IntersectionObserver TIDAK menyala sama
+  // sekali (teruji — requestAnimationFrame pun mati). Tanpa ini, pengunjung yang
+  // membuka tautan "di tab baru" berpeluang menemukan halaman kosong.
+  // Karena itu: apa pun yang masih tersembunyi setelah halaman siap, tampilkan.
+  function tampilkanSisanya() {
+    document.querySelectorAll('.fade-up:not(.visible)').forEach(el => {
+      const r = el.getBoundingClientRect();
+      if (r.top < innerHeight && r.bottom > 0) el.classList.add('visible');
+    });
+  }
+  addEventListener('load', () => setTimeout(tampilkanSisanya, 300));
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) setTimeout(tampilkanSisanya, 100);
+  });
 
   // Min date for booking
   const today = new Date().toISOString().split('T')[0];
@@ -1221,6 +1254,7 @@
     pesan += `\nMohon konfirmasi ketersediaan jadwalnya. Terima kasih! 🌸`;
 
     const url = `https://wa.me/6281386291552?text=${encodeURIComponent(pesan)}`;
+    if (window.catatBooking) window.catatBooking(); // form lengkap = niat tertinggi
     window.open(url, '_blank');
     showToast('✅ Membuka WhatsApp...');
   }
@@ -1233,6 +1267,7 @@
   }
 </script>
 <script src="/js/hit.js" defer></script>
+<script src="/js/goal.js" defer></script>
 <script src="/js/gallery.js" defer></script>
 <script src="/js/pricelist.js" defer></script>
 <script src="/js/lightbox.js" defer></script>
