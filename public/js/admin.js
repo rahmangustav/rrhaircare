@@ -212,8 +212,28 @@ async function loadStats(){
   document.getElementById('visitFirst').textContent = a.firstAt
     ? 'Mulai mencatat sejak ' + new Date(a.firstAt).toLocaleString('id-ID')
     : 'Belum ada kunjungan tercatat.';
-  // Asal pengunjung (7 hari + total), diurutkan dari yang paling ramai
   const last7 = []; for (let i=0;i<7;i++) last7.push(ymd(new Date(Date.now()-i*864e5)));
+  // Sasaran konversi. booking = form terisi + chat; lamaran kerja SENGAJA
+  // tidak dijumlahkan ke booking supaya angkanya tidak menipu.
+  const G = a.goals||{};
+  const jum = (n,keys)=>keys.reduce((t,k)=>t+((G[n]||{}).days||{})[k]||0,0);
+  const tot = n => (G[n]||{}).total||0;
+  const bookW7 = jum('booking_form',last7)+jum('booking_chat',last7);
+  const bookTot = tot('booking_form')+tot('booking_chat');
+  document.getElementById('goalStats').innerHTML = `
+    <div class="stat"><div class="n" style="color:#1f7a3d">${bookW7}</div><div class="l">Booking 7 hari</div></div>
+    <div class="stat"><div class="n">${bookTot}</div><div class="l">Booking total</div></div>
+    <div class="stat"><div class="n" style="color:var(--rose-gold)">${tot('booking_form')}</div><div class="l">Lewat form booking</div></div>
+    <div class="stat"><div class="n" style="color:var(--muted)">${tot('lamaran_kerja')}</div><div class="l">Lamaran kerja</div></div>`;
+  const bs = {};
+  for (const n of ['booking_form','booking_chat'])
+    for (const [s,c] of Object.entries((G[n]||{}).sources||{})) bs[s]=(bs[s]||0)+c;
+  const bsRows = Object.entries(bs).sort((x,y)=>y[1]-x[1]);
+  document.getElementById('goalSources').innerHTML = bsRows.length
+    ? bsRows.map(([s,c])=>`<tr><td>${esc(s)}</td><td style="text-align:right">${c}</td></tr>`).join('')
+    : '<tr><td colspan="2" style="text-align:center;color:var(--muted);padding:20px">Belum ada klik booking tercatat.</td></tr>';
+
+  // Asal pengunjung (7 hari + total), diurutkan dari yang paling ramai
   const srcRows = Object.entries(a.sources||{}).map(([name,s])=>{
     const d = s.days||{};
     return { name, w7: last7.reduce((t,k)=>t+(d[k]||0),0), total: s.total||0 };

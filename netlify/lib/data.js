@@ -311,6 +311,32 @@ export async function recordHit({ path = '/', ip = '', ref = '', campaign = '', 
   return a;
 }
 
+// Sasaran konversi: peristiwa yang benar-benar berarti buat salon, terutama
+// klik booking WhatsApp. Dicatat terpisah dari kunjungan biasa, lengkap dengan
+// ASAL pengunjungnya — supaya pertanyaan "kanal mana yang mengisi kursi salon?"
+// bisa dijawab, bukan cuma "kanal mana yang mengirim trafik".
+export const GOAL_NAMES = ['booking_form', 'booking_chat', 'pesanan_toko', 'lamaran_kerja'];
+
+export async function recordGoal({ name = '', ref = '', campaign = '', selfHost = '' } = {}) {
+  if (!GOAL_NAMES.includes(name)) return null;
+  const a = (await stats().get('analytics', { type: 'json' })) || emptyStats();
+  const day = todayJakarta();
+
+  a.goals = a.goals || {};
+  const g = (a.goals[name] = a.goals[name] || { total: 0, days: {}, sources: {} });
+  g.total++;
+  g.days[day] = (g.days[day] || 0) + 1;
+
+  // Asal DIAMBIL DARI AWAL SESI (dikirim klien), bukan dari halaman tempat
+  // tombol diklik — kalau tidak, semua konversi tampak berasal dari situs sendiri.
+  const src = classifySource(ref, campaign, selfHost) || 'Langsung';
+  g.sources[src] = (g.sources[src] || 0) + 1;
+
+  a.updatedAt = Date.now();
+  await stats().setJSON('analytics', a);
+  return g;
+}
+
 export async function getStats() {
   const a = (await stats().get('analytics', { type: 'json' })) || emptyStats();
   const { seen, ...rest } = a; // jangan kirim daftar IP ter-hash ke panel

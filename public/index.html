@@ -1221,6 +1221,7 @@
     pesan += `\nMohon konfirmasi ketersediaan jadwalnya. Terima kasih! 🌸`;
 
     const url = `https://wa.me/6281386291552?text=${encodeURIComponent(pesan)}`;
+    if (window.catatBooking) window.catatBooking(); // form lengkap = niat tertinggi
     window.open(url, '_blank');
     showToast('✅ Membuka WhatsApp...');
   }
@@ -1233,6 +1234,7 @@
   }
 </script>
 <script src="/js/hit.js" defer></script>
+<script src="/js/goal.js" defer></script>
 <script src="/js/gallery.js" defer></script>
 <script src="/js/pricelist.js" defer></script>
 <script src="/js/lightbox.js" defer></script>
