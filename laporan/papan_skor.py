@@ -54,7 +54,7 @@ def ig_get(token: str, path: str, **params):
 
 def data_instagram() -> dict:
     tok = ig_token()
-    prof = ig_get(tok, IG_ID, fields="followers_count,media_count")
+    prof = ig_get(tok, IG_ID, fields="followers_count,media_count,website")
     media = ig_get(tok, f"{IG_ID}/media",
                    fields="id,timestamp,media_product_type,like_count,comments_count",
                    limit=40)["data"]
@@ -80,7 +80,17 @@ def data_instagram() -> dict:
         except Exception:
             continue
 
+    # Link bio = SATU-SATUNYA jalan klik dari Instagram ke situs. Kalau kosong,
+    # semua caption "booking di bawah 👇" menuntun ke tempat yang tidak ada, dan
+    # kegagalan itu TIDAK KELIHATAN di metrik mana pun — jangkauan tetap terlihat
+    # sehat sementara tak seorang pun bisa sampai ke booking. Karena itu diperiksa
+    # tiap pekan, bukan sekali lalu dilupakan.
+    link = (prof.get("website") or "").strip()
+
     return {
+        "link_bio": link,
+        "link_bio_ada": bool(link),
+        "link_bio_beratribusi": "src=ig" in link,
         "follower": prof.get("followers_count"),
         "total_media": prof.get("media_count"),
         "jangkauan_median": int(statistics.median(jangkauan)) if jangkauan else 0,
@@ -235,6 +245,15 @@ def cetak(s: dict) -> None:
         if i["follower"] and i["jangkauan_median"]:
             pct = i["jangkauan_median"] / i["follower"] * 100
             print(f"  Jangkauan median = {pct:.1f}% dari follower sendiri")
+        if not i.get("link_bio_ada"):
+            print("  🚨 LINK BIO KOSONG — tidak ada jalan klik dari Instagram ke situs.")
+            print("     Caption 'booking di bawah 👇' menuntun ke tempat yang tidak ada.")
+            print("     Perbaiki manual (API tak bisa edit profil): isi rrhaircare.id/?src=ig")
+        elif not i.get("link_bio_beratribusi"):
+            print(f"  ⚠️  Link bio ada tapi tanpa ?src=ig: {i['link_bio']}")
+            print("     Kunjungannya akan salah masuk kolom 'Langsung'.")
+        else:
+            print(f"  ✅ Link bio beratribusi: {i['link_bio']}")
     else:
         print("  (gagal dibaca)")
 
