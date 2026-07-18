@@ -212,6 +212,15 @@ async function loadStats(){
   document.getElementById('visitFirst').textContent = a.firstAt
     ? 'Mulai mencatat sejak ' + new Date(a.firstAt).toLocaleString('id-ID')
     : 'Belum ada kunjungan tercatat.';
+  // Asal pengunjung (7 hari + total), diurutkan dari yang paling ramai
+  const last7 = []; for (let i=0;i<7;i++) last7.push(ymd(new Date(Date.now()-i*864e5)));
+  const srcRows = Object.entries(a.sources||{}).map(([name,s])=>{
+    const d = s.days||{};
+    return { name, w7: last7.reduce((t,k)=>t+(d[k]||0),0), total: s.total||0 };
+  }).sort((x,y)=> y.w7-x.w7 || y.total-x.total).slice(0,12);
+  document.getElementById('visitSources').innerHTML = srcRows.length
+    ? srcRows.map(r=>`<tr><td>${esc(r.name)}</td><td style="text-align:right">${r.w7}</td><td style="text-align:right;color:var(--muted)">${r.total}</td></tr>`).join('')
+    : '<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:20px">Belum ada data.</td></tr>';
   // Halaman terpopuler
   const pages = Object.entries(a.pages||{}).sort((x,y)=>y[1]-x[1]).slice(0,10);
   document.getElementById('visitPages').innerHTML = pages.length

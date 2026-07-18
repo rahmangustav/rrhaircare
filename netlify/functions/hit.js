@@ -9,7 +9,15 @@ export default async (req, context) => {
     req.headers.get('x-nf-client-connection-ip') ||
     (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() ||
     '';
-  await recordHit({ path: b.path, ip });
+  let selfHost = '';
+  try { selfHost = new URL(req.url).hostname.toLowerCase().replace(/^www\./, ''); } catch {}
+  await recordHit({
+    path: b.path,
+    ip,
+    ref: (b.ref || '').toString().slice(0, 300),
+    campaign: (b.campaign || '').toString().slice(0, 40),
+    selfHost,
+  });
   return json({ ok: true });
 };
 

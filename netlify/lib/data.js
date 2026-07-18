@@ -234,7 +234,34 @@ export async function expireStaleOrders() {
 //   { total:{views,visitors}, days:{ 'YYYY-MM-DD':{views,visitors} },
 //     pages:{ '/path':views }, seen:{ day, ids:{} }, firstAt, updatedAt }
 const stats = () => getStore({ name: 'stats', consistency: 'strong' });
-const emptyStats = () => ({ total: { views: 0, visitors: 0 }, days: {}, pages: {}, firstAt: Date.now(), updatedAt: Date.now() });
+const emptyStats = () => ({ total: { views: 0, visitors: 0 }, days: {}, pages: {}, sources: {}, firstAt: Date.now(), updatedAt: Date.now() });
+
+// Asal kunjungan → nama yang dimengerti pemilik toko.
+// Parameter kampanye (?utm_source= / ?src=) menang atas referrer.
+// Kembalikan '' untuk pindah-halaman di dalam situs sendiri (jangan dihitung).
+const SOURCE_HOSTS = [
+  [/(^|\.)(youtube\.com|youtu\.be)$/, 'YouTube'],
+  [/(^|\.)instagram\.com$/, 'Instagram'],
+  [/(^|\.)(facebook\.com|fb\.me|m\.me)$/, 'Facebook'],
+  [/(^|\.)tiktok\.com$/, 'TikTok'],
+  [/(^|\.)(wa\.me|whatsapp\.com)$/, 'WhatsApp'],
+  [/(^|\.)google\./, 'Google Penelusuran'],
+  [/(^|\.)(bing\.com|search\.yahoo\.com|duckduckgo\.com)$/, 'Mesin Pencari Lain'],
+  [/(^|\.)threads\.(net|com)$/, 'Threads'],
+];
+const SOURCE_ALIAS = { yt: 'YouTube', youtube: 'YouTube', ig: 'Instagram', instagram: 'Instagram', wa: 'WhatsApp', whatsapp: 'WhatsApp', fb: 'Facebook', facebook: 'Facebook', tiktok: 'TikTok', tt: 'TikTok' };
+
+export function classifySource(ref = '', campaign = '', selfHost = '') {
+  const c = (campaign || '').toString().trim().toLowerCase().slice(0, 40);
+  if (c) return SOURCE_ALIAS[c] || (c.charAt(0).toUpperCase() + c.slice(1));
+  if (!ref) return 'Langsung';
+  let host = '';
+  try { host = new URL(ref).hostname.toLowerCase().replace(/^www\./, ''); } catch { return 'Langsung'; }
+  if (!host) return 'Langsung';
+  if (selfHost && (host === selfHost || host.endsWith('.' + selfHost))) return ''; // navigasi internal
+  for (const [re, name] of SOURCE_HOSTS) if (re.test(host)) return name;
+  return host.slice(0, 60);
+}
 
 function todayJakarta() {
   // Tanggal 'YYYY-MM-DD' menurut zona Asia/Jakarta (WIB, UTC+7)
@@ -249,7 +276,7 @@ function visitorId(ip, day) {
 }
 
 // Keunikan pengunjung ditentukan SERVER dari IP, bukan dari klien (anti manipulasi).
-export async function recordHit({ path = '/', ip = '' } = {}) {
+export async function recordHit({ path = '/', ip = '', ref = '', campaign = '', selfHost = '' } = {}) {
   const a = (await stats().get('analytics', { type: 'json' })) || emptyStats();
   const day = todayJakarta();
   a.days[day] = a.days[day] || { views: 0, visitors: 0 };
@@ -265,6 +292,20 @@ export async function recordHit({ path = '/', ip = '' } = {}) {
 
   const p = (path || '/').slice(0, 120);
   a.pages[p] = (a.pages[p] || 0) + 1;
+
+  // Asal kunjungan: dicatat sekali per pengunjung per hari (bukan tiap halaman),
+  // supaya klik-klik di dalam situs tak menggelembungkan angkanya.
+  const src = classifySource(ref, campaign, selfHost);
+  if (src) {
+    a.sources = a.sources || {};
+    const firstOfDay = !id || a.seen.ids[id] === 1; // 1 = baru saja dihitung sebagai pengunjung baru
+    if (firstOfDay) {
+      a.sources[src] = a.sources[src] || { total: 0, days: {} };
+      a.sources[src].total++;
+      a.sources[src].days[day] = (a.sources[src].days[day] || 0) + 1;
+      if (id) a.seen.ids[id] = 2; // tandai sudah punya sumber, jangan dihitung lagi hari ini
+    }
+  }
   a.updatedAt = Date.now();
   await stats().setJSON('analytics', a);
   return a;

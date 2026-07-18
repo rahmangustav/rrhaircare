@@ -7,10 +7,16 @@
     var unique = false;
     try { unique = !localStorage.getItem(key); if (unique) localStorage.setItem(key, '1'); } catch (e) {}
     var path = location.pathname || '/';
+    // Asal kunjungan: ?utm_source= / ?src= kalau ada, kalau tidak dari referrer.
+    var campaign = '';
+    try {
+      var q = new URLSearchParams(location.search);
+      campaign = q.get('utm_source') || q.get('src') || '';
+    } catch (e) {}
     fetch('/api/hit', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ path: path, unique: unique }),
+      body: JSON.stringify({ path: path, unique: unique, ref: document.referrer || '', campaign: campaign }),
       keepalive: true
     }).catch(function () {});
   } catch (e) {}
