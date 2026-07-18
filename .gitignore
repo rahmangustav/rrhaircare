@@ -16,3 +16,4 @@ __pycache__/
 # Dokumen bisnis internal — repo ini PUBLIK, jangan pernah di-commit
 Audit-*.pdf
 JADWAL-INSTAGRAM.md
+instagram/data/
