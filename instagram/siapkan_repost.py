@@ -63,6 +63,29 @@ def kata(s):
     return {w for w in s.split() if len(w) > 3 and w not in STOP}
 
 
+# Kata yang menandai judul "menjual" alih-alih menceritakan. Diukur 19 Jul 2026
+# pada 126 video publik channel ini: judul deskriptif median 394 tontonan lawan
+# judul bergaya jualan 178 — 2,2x lebih sedikit. Pola yang sama muncul di
+# Instagram (caption "LANGSUNG BOOKING" berjangkauan jauh di bawah lainnya).
+# Lihat google/analisa_judul.py untuk angka lengkapnya.
+KATA_JUALAN = (
+    "promo", "diskon", "hubungi", "booking", "order", "buruan", "cepetan",
+    "hemat", "terjangkau", "terbaik", "terpercaya", "yuk ke", "tempatnya",
+    "harga", "gratis", "murah", "last call",
+)
+
+
+def judul_menjual(judul: str) -> list:
+    """Kata jualan yang muncul di judul (hashtag diabaikan).
+
+    Caption Instagram sering dibuka dengan ajakan beli, dan judul YouTube
+    diturunkan dari caption itu — jadi tanpa penjaga ini gaya jualan ikut
+    terbawa ke platform yang justru paling menghukumnya.
+    """
+    inti = re.sub(r"#\S+", "", judul).lower()
+    return [k for k in KATA_JUALAN if k in inti]
+
+
 def judul_youtube(cap):
     """Judul dari kalimat pertama caption, dipotong wajar dan dibersihkan."""
     baris = [b.strip() for b in (cap or "").splitlines() if b.strip()]
@@ -76,7 +99,50 @@ def judul_youtube(cap):
     return t or "RR Hair Care — Salon Koja Jakarta Utara"
 
 
+def periksa_manifest() -> int:
+    """Audit judul di manifest yang SUDAH disiapkan — inilah lubang sebenarnya.
+
+    Judul otomatis dari caption jarang bergaya jualan (banyak Reel malah tanpa
+    caption sama sekali). Yang benar-benar meleset adalah langkah POLES MANUAL:
+    judul ditulis ulang dari teks di layar video, dan teks layar Instagram
+    sering berbunyi "BURUANNN BOOKINGGG...". Terjadi nyata pada Reel 30 Jun
+    2026 — judulnya jadi "Makin Ramai, Buruan Booking" sampai ketahuan
+    19 Jul 2026. Karena itu manifest perlu diperiksa terpisah, bukan cuma
+    keluaran judul_youtube().
+    """
+    p = os.path.join(OUT, "manifest.json")
+    if not os.path.exists(p):
+        print(f"Belum ada manifest di {p}")
+        return 0
+    with open(p) as f:
+        m = json.load(f)
+    video = m.get("video", [])
+    kena = []
+    print(f"Audit {len(video)} judul di manifest:\n")
+    for i, v in enumerate(video, 1):
+        j = v.get("judul", "")
+        kj = judul_menjual(j)
+        panjang = " [>100 CHAR!]" if len(j) > 100 else ""
+        if kj or panjang:
+            kena.append((i, j, kj))
+            print(f"  ⚠️  {i:>2}. {j[:64]}{panjang}")
+            if kj:
+                print(f"        └ gaya jualan: {', '.join(kj)}")
+        else:
+            print(f"      {i:>2}. {j[:64]}")
+    if kena:
+        print(f"\n⚠️  {len(kena)} judul perlu ditulis ulang sebelum diunggah.")
+        print("   Judul bergaya jualan ditonton 2,2x lebih sedikit (126 video,")
+        print("   lihat google/analisa_judul.py). TONTON dulu videonya, jangan mengarang.")
+    else:
+        print("\n✅ Semua judul deskriptif, tak ada gaya jualan, semua ≤100 karakter.")
+    return len(kena)
+
+
 def main():
+    if "--periksa-manifest" in sys.argv:
+        sys.exit(1 if periksa_manifest() else 0)
+
     unduh = "--unduh" in sys.argv
     tok = token()
 
@@ -128,8 +194,19 @@ def main():
     print(f"Reel sejak {SEJAK}: {len(reels)} | sudah ada di YouTube: {len(reels)-len(belum)} | "
           f"BELUM: {len(belum)}")
     if not unduh:
+        ditandai = 0
         for i, m in enumerate(belum, 1):
-            print(f"{i:>2}. {m['timestamp'][:10]}  {judul_youtube(m.get('caption'))[:70]}")
+            j = judul_youtube(m.get("caption"))
+            kj = judul_menjual(j)
+            tanda = "⚠️ " if kj else "   "
+            ditandai += 1 if kj else 0
+            print(f"{tanda}{i:>2}. {m['timestamp'][:10]}  {j[:66]}")
+            if kj:
+                print(f"       └ gaya jualan ({', '.join(kj)}) — tulis ulang jadi deskriptif")
+        if ditandai:
+            print(f"\n⚠️  {ditandai} judul bergaya jualan. Judul semacam ini ditonton 2,2x lebih")
+            print("   sedikit (126 video, lihat google/analisa_judul.py). Ganti dengan kalimat")
+            print("   yang MENCERITAKAN isi video — tapi tonton dulu videonya, jangan mengarang.")
         print("\nJalankan dengan --unduh untuk mengunduh video + menyiapkan metadata.")
         return
 
