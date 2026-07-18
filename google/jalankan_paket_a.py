@@ -85,6 +85,13 @@ def creds():
 yt = build("youtube", "v3", credentials=creds())
 
 # ---- ambil data SEGAR semua video publik + info channel ----
+# PERHATIAN: daftar id-nya BEKU di snapshot 15 Jul 2026. Metadatanya memang
+# diambil segar dari API, tapi video yang terbit SETELAH tanggal itu tidak ada
+# di daftar ini sehingga tak pernah tersentuh. Terbukti 18 Jul 2026: dua video
+# baru sama sekali tanpa link ke rrhaircare.id. Skrip ini sengaja dibiarkan
+# beku karena tugasnya sekali-jalan (retitle + bersih-bersih 15 Jul) dan
+# JUDUL_BARU-nya khusus video lama. Untuk perawatan RUTIN video baru, pakai
+# `rawat_video_baru.py` yang menarik daftarnya segar dari playlist uploads.
 snap = json.load(open(ROOT / "data" / "audit_20260715.json"))
 all_ids = [v["id"] for v in snap["videos"]]
 fresh = {}
