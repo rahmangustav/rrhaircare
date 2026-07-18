@@ -251,8 +251,21 @@ const SOURCE_HOSTS = [
 ];
 const SOURCE_ALIAS = { yt: 'YouTube', youtube: 'YouTube', ig: 'Instagram', instagram: 'Instagram', wa: 'WhatsApp', whatsapp: 'WhatsApp', fb: 'Facebook', facebook: 'Facebook', tiktok: 'TikTok', tt: 'TikTok' };
 
+// Bersihkan nilai ?src= dari karakter sampah sebelum dipakai sebagai label.
+// Terjadi nyata 19 Jul 2026: 7 kunjungan masuk sebagai sumber "Yt`" — nilai
+// src-nya membawa backtick, hampir pasti karena tautan disalin dari teks yang
+// diapit tanda backtick (format kode) lalu backtick-nya ikut terbawa. Akibatnya
+// kunjungan YouTube yang sah pecah jadi label sendiri dan tabel Asal Pengunjung
+// jadi menyesatkan. Hanya huruf, angka, titik, garis bawah, dan strip yang
+// dipertahankan — cukup untuk semua alias yang dipakai.
+function bersihkanKampanye(nilai) {
+  return (nilai || '').toString().trim().toLowerCase()
+    .replace(/[^a-z0-9._-]/g, '')
+    .slice(0, 40);
+}
+
 export function classifySource(ref = '', campaign = '', selfHost = '') {
-  const c = (campaign || '').toString().trim().toLowerCase().slice(0, 40);
+  const c = bersihkanKampanye(campaign);
   if (c) return SOURCE_ALIAS[c] || (c.charAt(0).toUpperCase() + c.slice(1));
   if (!ref) return 'Langsung';
   let host = '';
