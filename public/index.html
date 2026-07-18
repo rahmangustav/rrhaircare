@@ -6,6 +6,11 @@
   <title>RR Hair Care — Salon Perawatan Rambut Premium</title>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <!-- Penanda "JavaScript hidup". Animasi muncul-perlahan baru boleh
+       menyembunyikan konten kalau penanda ini ada — kalau JS mati atau gagal,
+       konten tetap terlihat. Harus di <head> dan tanpa defer supaya kelasnya
+       terpasang sebelum halaman dilukis (kalau tidak, konten sempat berkedip). -->
+  <script>document.documentElement.className += ' js';</script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -706,11 +711,23 @@
     }
 
     /* ── ANIMATIONS ── */
-    .fade-up {
+    /* Konten TERLIHAT sebagai keadaan bawaan. Sebelumnya opacity:0 yang jadi
+       bawaan dan kelas .visible cuma dipasang JavaScript — artinya kalau JS
+       mati, gagal, atau observer tak pernah menyala, 11 blok halaman ini
+       (termasuk form booking) hilang permanen tanpa jejak. */
+    .fade-up { opacity: 1; transform: none; }
+
+    /* Baru disembunyikan kalau JS terbukti hidup, supaya animasinya jalan. */
+    html.js .fade-up {
       opacity: 0; transform: translateY(28px);
       transition: opacity 0.65s ease, transform 0.65s ease;
     }
-    .fade-up.visible { opacity: 1; transform: translateY(0); }
+    html.js .fade-up.visible { opacity: 1; transform: translateY(0); }
+
+    /* Hormati setelan "kurangi animasi" di perangkat pengunjung. */
+    @media (prefers-reduced-motion: reduce) {
+      html.js .fade-up { opacity: 1; transform: none; transition: none; }
+    }
   </style>
 </head>
 <body>
@@ -1187,6 +1204,22 @@
     entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
   }, { threshold: 0.1 });
   document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+  // Jaring pengaman. Kalau halaman dimuat sementara tab ada di latar belakang,
+  // Chrome membekukan pipeline render: IntersectionObserver TIDAK menyala sama
+  // sekali (teruji — requestAnimationFrame pun mati). Tanpa ini, pengunjung yang
+  // membuka tautan "di tab baru" berpeluang menemukan halaman kosong.
+  // Karena itu: apa pun yang masih tersembunyi setelah halaman siap, tampilkan.
+  function tampilkanSisanya() {
+    document.querySelectorAll('.fade-up:not(.visible)').forEach(el => {
+      const r = el.getBoundingClientRect();
+      if (r.top < innerHeight && r.bottom > 0) el.classList.add('visible');
+    });
+  }
+  addEventListener('load', () => setTimeout(tampilkanSisanya, 300));
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) setTimeout(tampilkanSisanya, 100);
+  });
 
   // Min date for booking
   const today = new Date().toISOString().split('T')[0];
