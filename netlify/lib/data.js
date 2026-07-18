@@ -316,8 +316,11 @@ export async function recordHit({ path = '/', ip = '', ref = '', campaign = '', 
 // ASAL pengunjungnya — supaya pertanyaan "kanal mana yang mengisi kursi salon?"
 // bisa dijawab, bukan cuma "kanal mana yang mengirim trafik".
 export const GOAL_NAMES = ['booking_form', 'booking_chat', 'pesanan_toko', 'lamaran_kerja'];
+// Titik tombol yang diklik — menjawab "tombol mana yang sebenarnya dipakai orang",
+// supaya penempatan tombol bisa diperbaiki berdasar data, bukan tebakan.
+export const GOAL_SPOTS = ['form', 'float', 'lokasi', 'footer', 'karir', 'checkout'];
 
-export async function recordGoal({ name = '', ref = '', campaign = '', selfHost = '' } = {}) {
+export async function recordGoal({ name = '', spot = '', ref = '', campaign = '', selfHost = '' } = {}) {
   if (!GOAL_NAMES.includes(name)) return null;
   const a = (await stats().get('analytics', { type: 'json' })) || emptyStats();
   const day = todayJakarta();
@@ -326,6 +329,11 @@ export async function recordGoal({ name = '', ref = '', campaign = '', selfHost 
   const g = (a.goals[name] = a.goals[name] || { total: 0, days: {}, sources: {} });
   g.total++;
   g.days[day] = (g.days[day] || 0) + 1;
+
+  if (GOAL_SPOTS.includes(spot)) {
+    g.spots = g.spots || {};
+    g.spots[spot] = (g.spots[spot] || 0) + 1;
+  }
 
   // Asal DIAMBIL DARI AWAL SESI (dikirim klien), bukan dari halaman tempat
   // tombol diklik — kalau tidak, semua konversi tampak berasal dari situs sendiri.

@@ -11,6 +11,7 @@ export default async (req) => {
 
   const g = await recordGoal({
     name: (b.name || '').toString().slice(0, 30),
+    spot: (b.spot || '').toString().slice(0, 20),
     ref: (b.ref || '').toString().slice(0, 300),
     campaign: (b.campaign || '').toString().slice(0, 40),
     selfHost,
