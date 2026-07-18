@@ -212,8 +212,55 @@ async function loadStats(){
   document.getElementById('visitFirst').textContent = a.firstAt
     ? 'Mulai mencatat sejak ' + new Date(a.firstAt).toLocaleString('id-ID')
     : 'Belum ada kunjungan tercatat.';
-  // Asal pengunjung (7 hari + total), diurutkan dari yang paling ramai
   const last7 = []; for (let i=0;i<7;i++) last7.push(ymd(new Date(Date.now()-i*864e5)));
+  // Sasaran konversi. booking = form terisi + chat; lamaran kerja SENGAJA
+  // tidak dijumlahkan ke booking supaya angkanya tidak menipu.
+  const G = a.goals||{};
+  // Tanda kurung di sekitar nilai harian itu WAJIB: tanpa itu ekspresinya
+  // terbaca (t + x) || 0, jadi satu hari kosong mereset akumulator ke nol.
+  const hari = (n,k) => ((G[n]||{}).days||{})[k] || 0;
+  const jum = (n,keys)=>keys.reduce((t,k)=>t+hari(n,k),0);
+  const tot = n => (G[n]||{}).total||0;
+  const bookW7 = jum('booking_form',last7)+jum('booking_chat',last7);
+  const bookTot = tot('booking_form')+tot('booking_chat');
+  document.getElementById('goalStats').innerHTML = `
+    <div class="stat"><div class="n" style="color:#1f7a3d">${bookW7}</div><div class="l">Booking 7 hari</div></div>
+    <div class="stat"><div class="n">${bookTot}</div><div class="l">Booking total</div></div>
+    <div class="stat"><div class="n" style="color:var(--rose-gold)">${tot('booking_form')}</div><div class="l">Lewat form booking</div></div>
+    <div class="stat"><div class="n" style="color:var(--muted)">${tot('lamaran_kerja')}</div><div class="l">Lamaran kerja</div></div>`;
+  // Grafik 14 hari khusus booking — supaya tren mingguannya kelihatan,
+  // bukan cuma satu angka tanpa konteks.
+  const gBars = [];
+  for (let i=13;i>=0;i--){ const dt=new Date(Date.now()-i*864e5); const k=ymd(dt);
+    gBars.push({ k, label: dt.getDate()+'/'+(dt.getMonth()+1), v: hari('booking_form',k)+hari('booking_chat',k) }); }
+  const gMax = Math.max(1, ...gBars.map(b=>b.v));
+  document.getElementById('goalChart').innerHTML = gBars.map(b=>{
+    const h = Math.round(b.v/gMax*100);
+    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px" title="${b.k}: ${b.v} klik booking">
+      <div style="font-size:.7rem;color:var(--muted)">${b.v||''}</div>
+      <div style="width:100%;height:${h}px;min-height:2px;background:#1f7a3d;border-radius:4px 4px 0 0;opacity:${b.v?1:.25}"></div>
+      <div style="font-size:.62rem;color:var(--muted)">${b.label}</div>
+    </div>`; }).join('');
+  // Tombol mana yang dipakai — semua sasaran digabung, termasuk lamaran kerja,
+  // karena pertanyaannya "tombol mana yang diklik", bukan "berapa booking".
+  const SPOT_NAMA = { form:'Form Booking', float:'Tombol Melayang', lokasi:'Bagian Lokasi',
+    footer:'Footer', karir:'Lowongan Kerja', checkout:'Konfirmasi Pesanan' };
+  const spots = {};
+  for (const g of Object.values(G))
+    for (const [s,c] of Object.entries(g.spots||{})) spots[s]=(spots[s]||0)+c;
+  const spotRows = Object.entries(spots).sort((x,y)=>y[1]-x[1]);
+  document.getElementById('goalSpots').innerHTML = spotRows.length
+    ? spotRows.map(([s,c])=>`<tr><td>${esc(SPOT_NAMA[s]||s)}</td><td style="text-align:right">${c}</td></tr>`).join('')
+    : '<tr><td colspan="2" style="text-align:center;color:var(--muted);padding:20px">Belum ada data.</td></tr>';
+  const bs = {};
+  for (const n of ['booking_form','booking_chat'])
+    for (const [s,c] of Object.entries((G[n]||{}).sources||{})) bs[s]=(bs[s]||0)+c;
+  const bsRows = Object.entries(bs).sort((x,y)=>y[1]-x[1]);
+  document.getElementById('goalSources').innerHTML = bsRows.length
+    ? bsRows.map(([s,c])=>`<tr><td>${esc(s)}</td><td style="text-align:right">${c}</td></tr>`).join('')
+    : '<tr><td colspan="2" style="text-align:center;color:var(--muted);padding:20px">Belum ada klik booking tercatat.</td></tr>';
+
+  // Asal pengunjung (7 hari + total), diurutkan dari yang paling ramai
   const srcRows = Object.entries(a.sources||{}).map(([name,s])=>{
     const d = s.days||{};
     return { name, w7: last7.reduce((t,k)=>t+(d[k]||0),0), total: s.total||0 };
