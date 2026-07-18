@@ -33,7 +33,15 @@ APPLY = "--apply" in sys.argv
 ROOT = Path(__file__).parent
 TOKEN_FILE = ROOT / "token.json"
 
-MARKER = "rrhaircare.id"
+# Penanda idempoten HARUS khas blok ini, bukan sekadar nama domain.
+# Dulu penandanya "rrhaircare.id" dan itu bocor dua kali:
+# (1) dua video punya deskripsi yang menyebut domain TANPA blok lengkap, jadi
+#     terlewat dari perawatan padahal tak punya nomor WhatsApp sama sekali;
+# (2) 19 Jul 2026 baris booking dinaikkan ke atas di SEMUA video oleh
+#     naikkan_link_booking.py — baris itu memuat "rrhaircare.id", sehingga
+#     penanda lama jadi selalu cocok dan blok takkan pernah dipasang lagi.
+# Nomor WhatsApp hanya ada di dalam blok, jadi ia penanda yang jujur.
+MARKER = "wa.me/6281386291552"
 
 # Link ber-`?src=yt` sejak awal. Aplikasi YouTube di HP sering tidak mengirim
 # referrer, jadi tanpa parameter ini kunjungan dari YouTube salah masuk kolom
