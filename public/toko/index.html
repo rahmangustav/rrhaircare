@@ -14,7 +14,7 @@
   <div class="nav-right">
     <a href="/">Beranda</a>
     <a href="/toko">Toko</a>
-    <button class="cart-btn" id="cartBtn"><i class="fa-solid fa-bag-shopping"></i>
+    <button class="cart-btn" id="cartBtn" aria-label="Buka keranjang belanja"><i class="fa-solid fa-bag-shopping"></i>
       <span class="cart-count" id="cartCount" style="display:none">0</span></button>
   </div>
 </nav>
@@ -32,7 +32,7 @@
 <!-- Cart drawer -->
 <div class="overlay" id="overlay"></div>
 <aside class="drawer" id="drawer">
-  <header><h2>Keranjang</h2><button class="close" id="closeCart"><i class="fa-solid fa-xmark"></i></button></header>
+  <header><h2>Keranjang</h2><button class="close" id="closeCart" aria-label="Tutup keranjang"><i class="fa-solid fa-xmark"></i></button></header>
   <div class="items" id="cartItems"></div>
   <footer id="cartFooter" style="display:none">
     <div class="row-total grand"><span>Subtotal</span><span id="cartSubtotal">Rp0</span></div>

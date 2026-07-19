@@ -36,16 +36,16 @@ const Cart = (() => {
     }
     if (footer) footer.style.display = 'block';
     box.innerHTML = items.map(i => {
-      const thumb = i.image ? `<img class="ci-thumb" src="${i.image}"/>` : `<div class="ci-thumb" style="display:flex;align-items:center;justify-content:center;color:var(--blush)"><i class="fa-solid fa-bottle-droplet"></i></div>`;
+      const thumb = i.image ? `<img class="ci-thumb" src="${i.image}" alt="${esc(i.name)}"/>` : `<div class="ci-thumb" style="display:flex;align-items:center;justify-content:center;color:var(--blush)"><i class="fa-solid fa-bottle-droplet"></i></div>`;
       return `<div class="cart-item">${thumb}
         <div class="ci-info">
           <h4>${esc(i.name)}</h4>
           <div class="ci-price">${rupiah(i.price)}</div>
           <div class="qty">
-            <button data-dec="${i.id}">−</button><span>${i.qty}</span><button data-inc="${i.id}">+</button>
+            <button data-dec="${i.id}" aria-label="Kurangi jumlah ${esc(i.name)}">−</button><span>${i.qty}</span><button data-inc="${i.id}" aria-label="Tambah jumlah ${esc(i.name)}">+</button>
           </div>
         </div>
-        <button class="ci-remove" data-rm="${i.id}"><i class="fa-solid fa-trash-can"></i></button>
+        <button class="ci-remove" data-rm="${i.id}" aria-label="Hapus ${esc(i.name)} dari keranjang"><i class="fa-solid fa-trash-can"></i></button>
       </div>`;
     }).join('');
     const sub = document.getElementById('cartSubtotal');
