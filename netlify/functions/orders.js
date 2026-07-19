@@ -1,7 +1,19 @@
-import { getProducts, saveProducts, getSettings, addOrder, expireStaleOrders, json } from '../lib/data.js';
+import { getProducts, saveProducts, getSettings, addOrder, expireStaleOrders,
+  orderRateStatus, noteOrderCreated, json } from '../lib/data.js';
 
-export default async (req) => {
+export default async (req, context) => {
   if (req.method !== 'POST') return json({ error: 'Method tidak didukung' }, 405);
+
+  const ip = (context && context.ip) ||
+    req.headers.get('x-nf-client-connection-ip') ||
+    (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() ||
+    '';
+  const rate = await orderRateStatus(ip);
+  if (rate.blocked) {
+    const menit = Math.max(1, Math.ceil(rate.retryAfter / 60));
+    return json({ error: `Terlalu banyak pesanan dari perangkat ini. Coba lagi dalam ${menit} menit.` }, 429);
+  }
+
   const { items, customer, shippingId } = await req.json().catch(() => ({}));
   if (!Array.isArray(items) || !items.length) return json({ error: 'Keranjang kosong' }, 400);
   if (!customer || !customer.name || !customer.phone || !customer.address)
@@ -35,6 +47,7 @@ export default async (req) => {
     if (p) p.stock -= it.qty;
   }
   await saveProducts(products);
+  await noteOrderCreated(ip);
   return json({ ok: true, code: order.code, id: order.id, total: order.total });
 };
 

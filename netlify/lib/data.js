@@ -137,6 +137,42 @@ export async function deleteProduct(id) {
 // dibatalkan otomatis supaya stok tidak terkunci selamanya.
 export const ORDER_HOLD_MS = 24 * 3600e3; // 24 jam untuk bayar
 
+// ── Pembatas order publik (anti borong-stok, per IP via Blobs) ──
+// Order baru memotong stok SEBELUM bayar dan menahannya sampai ORDER_HOLD_MS.
+// Tanpa batas ini, siapa pun bisa memborong seluruh stok berulang kali tanpa
+// pernah membayar — pelanggan asli kehabisan barang yang sebenarnya ada.
+const ORDER_MAX_PER_WINDOW = 5;     // maks order baru per IP dalam jendela
+const ORDER_WINDOW_MS = 30 * 60e3;  // jendela 30 menit
+
+// Logika murni (tanpa Blobs) — dipisah supaya bisa dites langsung.
+export function computeOrderRateStatus(rec, now) {
+  if (!rec || now - rec.firstAt > ORDER_WINDOW_MS) return { blocked: false, retryAfter: 0 };
+  if (rec.count >= ORDER_MAX_PER_WINDOW)
+    return { blocked: true, retryAfter: Math.ceil((rec.firstAt + ORDER_WINDOW_MS - now) / 1000) };
+  return { blocked: false, retryAfter: 0 };
+}
+export function nextOrderRateRecord(rec, now) {
+  const r = (rec && now - rec.firstAt <= ORDER_WINDOW_MS) ? rec : { count: 0, firstAt: now };
+  return { count: r.count + 1, firstAt: r.firstAt };
+}
+
+export async function orderRateStatus(ip) {
+  if (!ip) return { blocked: false, retryAfter: 0 };
+  const all = await readJSON('orderAttempts', {});
+  return computeOrderRateStatus(all[ip], Date.now());
+}
+
+export async function noteOrderCreated(ip) {
+  if (!ip) return;
+  const all = await readJSON('orderAttempts', {});
+  const now = Date.now();
+  for (const k of Object.keys(all)) {
+    if (now - all[k].firstAt > ORDER_WINDOW_MS) delete all[k];
+  }
+  all[ip] = nextOrderRateRecord(all[ip], now);
+  await writeJSON('orderAttempts', all);
+}
+
 // Status pesanan yang sah (dipakai untuk memvalidasi input admin).
 export const ORDER_STATUSES = ['menunggu_pembayaran', 'menunggu_verifikasi',
   'diproses', 'dikirim', 'selesai', 'batal'];
