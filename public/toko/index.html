@@ -22,10 +22,12 @@
 <header class="shop-hero">
   <div class="eyebrow">RR Hair Care Store</div>
   <h1>Produk Perawatan Rambut</h1>
-  <p>Belanja produk premium pilihan langsung dari salon kami. Bayar praktis via QRIS, kirim ke seluruh Indonesia.</p>
+  <p>Harga grosir langsung dari salon kami — cocok dipakai sendiri di rumah maupun jadi stok treatment untuk sesama salon &amp; stylist. Bayar praktis via QRIS, kirim ke seluruh Indonesia.</p>
+  <div class="trust-badge"><i class="fa-solid fa-star"></i> 4,9 · 163 ulasan Google</div>
 </header>
 
 <main class="container">
+  <div class="cat-tabs" id="catTabs"></div>
   <div class="grid" id="grid"><div class="empty">Memuat produk…</div></div>
 </main>
 
@@ -44,13 +46,26 @@
 <script src="/js/cart.js"></script>
 <script>
 const grid = document.getElementById('grid');
+const catTabs = document.getElementById('catTabs');
 const rupiah = n => 'Rp' + (Number(n)||0).toLocaleString('id-ID');
+let ALL_PRODUCTS = [];
+let ACTIVE_CAT = 'Semua';
 
-async function loadProducts(){
-  const res = await fetch('/api/products');
-  const products = await res.json();
-  if(!products.length){ grid.innerHTML = '<div class="empty">Produk segera hadir. Nantikan koleksi perawatan rambut kami. 💫</div>'; return; }
-  grid.innerHTML = products.map(p => {
+function renderTabs(){
+  const cats = ['Semua', ...new Set(ALL_PRODUCTS.map(p => p.category || 'Produk'))];
+  catTabs.innerHTML = cats.map(c =>
+    `<button class="cat-tab ${c===ACTIVE_CAT?'active':''}" data-cat="${esc(c)}">${esc(c)}</button>`
+  ).join('');
+  catTabs.querySelectorAll('.cat-tab').forEach(b => b.addEventListener('click', () => {
+    ACTIVE_CAT = b.dataset.cat;
+    renderTabs(); renderGrid();
+  }));
+}
+
+function renderGrid(){
+  const list = ACTIVE_CAT === 'Semua' ? ALL_PRODUCTS : ALL_PRODUCTS.filter(p => (p.category||'Produk') === ACTIVE_CAT);
+  if(!list.length){ grid.innerHTML = '<div class="empty">Tidak ada produk di kategori ini.</div>'; return; }
+  grid.innerHTML = list.map(p => {
     const habis = p.stock <= 0;
     const img = p.image ? `<img src="${p.image}" alt="${esc(p.name)}"/>` : `<div class="ph"><i class="fa-solid fa-bottle-droplet"></i></div>`;
     return `<div class="card">
@@ -66,9 +81,17 @@ async function loadProducts(){
       </div></div>`;
   }).join('');
   grid.querySelectorAll('.add').forEach(b => b.addEventListener('click', () => {
-    const p = products.find(x => x.id === b.dataset.id);
+    const p = ALL_PRODUCTS.find(x => x.id === b.dataset.id);
     Cart.add(p); toast(`"${p.name}" masuk keranjang`);
   }));
+}
+
+async function loadProducts(){
+  const res = await fetch('/api/products');
+  ALL_PRODUCTS = await res.json();
+  if(!ALL_PRODUCTS.length){ grid.innerHTML = '<div class="empty">Produk segera hadir. Nantikan koleksi perawatan rambut kami. 💫</div>'; return; }
+  renderTabs();
+  renderGrid();
 }
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 loadProducts();
