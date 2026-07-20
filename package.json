@@ -4,7 +4,8 @@
   "description": "Toko online RR Hair Care — Netlify (QRIS manual + ongkir flat)",
   "type": "module",
   "scripts": {
-    "dev": "netlify dev --offline --port 8888"
+    "dev": "netlify dev --offline --port 8888",
+    "test": "node --test"
   },
   "license": "UNLICENSED",
   "dependencies": {
