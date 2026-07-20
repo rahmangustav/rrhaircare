@@ -173,6 +173,44 @@ export async function noteOrderCreated(ip) {
   await writeJSON('orderAttempts', all);
 }
 
+// ── Pembatas unggah bukti bayar publik (anti banjir penyimpanan) ──
+// /api/orders/:code/proof tak pernah butuh login — kode order cuma 4 hex
+// acak (lihat catatan di order-proof.js). Tanpa batas ini siapa pun bisa
+// memanggilnya berulang kali dengan gambar hingga 4 MB dan membanjiri
+// Netlify Blobs dengan sampah biner, walau kodenya salah tebak sekalipun
+// (saveMedia menulis blob duluan sebelum kode order dicocokkan).
+const PROOF_MAX_PER_WINDOW = 8;     // maks unggahan per IP dalam jendela
+const PROOF_WINDOW_MS = 60 * 60e3;  // jendela 60 menit
+
+// Logika murni (tanpa Blobs) — dipisah supaya bisa dites langsung.
+export function computeProofRateStatus(rec, now) {
+  if (!rec || now - rec.firstAt > PROOF_WINDOW_MS) return { blocked: false, retryAfter: 0 };
+  if (rec.count >= PROOF_MAX_PER_WINDOW)
+    return { blocked: true, retryAfter: Math.ceil((rec.firstAt + PROOF_WINDOW_MS - now) / 1000) };
+  return { blocked: false, retryAfter: 0 };
+}
+export function nextProofRateRecord(rec, now) {
+  const r = (rec && now - rec.firstAt <= PROOF_WINDOW_MS) ? rec : { count: 0, firstAt: now };
+  return { count: r.count + 1, firstAt: r.firstAt };
+}
+
+export async function proofRateStatus(ip) {
+  if (!ip) return { blocked: false, retryAfter: 0 };
+  const all = await readJSON('proofAttempts', {});
+  return computeProofRateStatus(all[ip], Date.now());
+}
+
+export async function noteProofUploaded(ip) {
+  if (!ip) return;
+  const all = await readJSON('proofAttempts', {});
+  const now = Date.now();
+  for (const k of Object.keys(all)) {
+    if (now - all[k].firstAt > PROOF_WINDOW_MS) delete all[k];
+  }
+  all[ip] = nextProofRateRecord(all[ip], now);
+  await writeJSON('proofAttempts', all);
+}
+
 // Status pesanan yang sah (dipakai untuk memvalidasi input admin).
 export const ORDER_STATUSES = ['menunggu_pembayaran', 'menunggu_verifikasi',
   'diproses', 'dikirim', 'selesai', 'batal'];
