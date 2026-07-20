@@ -1,4 +1,4 @@
-import { requireAuth, getProducts, addProduct, updateProduct, deleteProduct, saveMedia, json } from '../lib/data.js';
+import { requireAuth, getProducts, addProduct, updateProduct, deleteProduct, saveMedia, buildProductFields, json } from '../lib/data.js';
 
 export default async (req, context) => {
   if (!(await requireAuth(req))) return json({ error: 'Perlu login admin' }, 401);
@@ -13,8 +13,7 @@ export default async (req, context) => {
 
   if (req.method === 'POST' || req.method === 'PUT') {
     const b = await req.json().catch(() => ({}));
-    const fields = { name: b.name, category: b.category, price: b.price, stock: b.stock,
-      description: b.description, active: b.active !== false && b.active !== 'false' };
+    const fields = buildProductFields(b);
     if (b.imageData) {
       try { fields.image = await saveMedia(b.imageData); }
       catch (e) { return json({ error: 'Ukuran gambar terlalu besar (maks 4 MB)' }, 413); }
