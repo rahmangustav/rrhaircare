@@ -177,6 +177,14 @@ export async function noteOrderCreated(ip) {
 export const ORDER_STATUSES = ['menunggu_pembayaran', 'menunggu_verifikasi',
   'diproses', 'dikirim', 'selesai', 'batal'];
 
+// Status order yang masih boleh menerima unggahan bukti bayar dari pembeli publik
+// (endpoint /api/orders/:code/proof, tanpa auth). Di luar dua status ini order
+// sudah masuk alur admin (diproses/dikirim/selesai) atau dibatalkan (batal) —
+// mengizinkan unggah di sana bisa memaksa status mundur lagi ke
+// "menunggu_verifikasi" dan, untuk order "batal", memicu applyStockTransition
+// memotong stok yang sudah dikembalikan.
+export const PROOF_UPLOADABLE_STATUSES = ['menunggu_pembayaran', 'menunggu_verifikasi'];
+
 export const getOrders = () => readJSON('orders', []);
 
 // Kembalikan stok produk untuk daftar item pesanan.
