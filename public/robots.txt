@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /checkout.html
+Disallow: /api/
+
+Sitemap: https://rrhaircare.id/sitemap.xml
