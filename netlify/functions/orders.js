@@ -1,5 +1,5 @@
-import { getProducts, saveProducts, getSettings, addOrder, expireStaleOrders,
-  orderRateStatus, noteOrderCreated, json } from '../lib/data.js';
+import { getProducts, getSettings, addOrder, expireStaleOrders,
+  orderRateStatus, noteOrderCreated, reserveStockFor, json } from '../lib/data.js';
 
 export default async (req, context) => {
   if (req.method !== 'POST') return json({ error: 'Method tidak didukung' }, 405);
@@ -34,6 +34,16 @@ export default async (req, context) => {
     orderItems.push({ id: p.id, name: p.name, price: p.price, qty });
   }
   const ship = (settings.shippingOptions || []).find(s => s.id === shippingId) || { label: '-', price: 0 };
+
+  // Pengecekan stok di atas cuma gagal-cepat (UX) dari snapshot awal `products`.
+  // Otoritas sebenarnya ada di reserveStockFor, yang membaca ulang stok TERKINI
+  // dan mengurangi di sana — supaya dua order yang datang nyaris bersamaan untuk
+  // unit terakhir sebuah produk tidak sama-sama lolos dan stok jadi minus.
+  const short = await reserveStockFor(orderItems);
+  if (short.length) {
+    return json({ error: 'Maaf, stok baru saja habis untuk salah satu produk. Coba pesan ulang.' }, 409);
+  }
+
   const order = await addOrder({
     items: orderItems, subtotal, shipping: { label: ship.label, price: ship.price },
     total: subtotal + ship.price,
@@ -41,12 +51,6 @@ export default async (req, context) => {
       city: customer.city || '', note: customer.note || '' },
     paymentProof: ''
   });
-  // Kurangi stok
-  for (const it of orderItems) {
-    const p = products.find(x => x.id === it.id);
-    if (p) p.stock -= it.qty;
-  }
-  await saveProducts(products);
   await noteOrderCreated(ip);
   return json({ ok: true, code: order.code, id: order.id, total: order.total });
 };

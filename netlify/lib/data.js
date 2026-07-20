@@ -201,6 +201,37 @@ async function deductStockFor(items) {
   }
   if (touched) await saveProducts(products);
 }
+// Cek stok tiap item terhadap snapshot produk yang diberikan, lalu kurangi
+// langsung di snapshot itu kalau semuanya cukup. Dipisah dari I/O Blobs supaya
+// bisa diuji sebagai fungsi murni. Mengembalikan array id produk yang stoknya
+// tak cukup (kosong = berhasil, snapshot sudah dikurangi; ada isi = snapshot
+// TIDAK diubah sama sekali, jadi gagal sebagian tidak pernah terjadi).
+export function applyStockReservation(products, items) {
+  const short = [];
+  for (const it of items) {
+    const p = products.find(x => x.id === it.id);
+    const qty = Number(it.qty) || 0;
+    if (!p || (Number(p.stock) || 0) < qty) short.push(it.id);
+  }
+  if (short.length) return short;
+  for (const it of items) {
+    const p = products.find(x => x.id === it.id);
+    p.stock = (Number(p.stock) || 0) - (Number(it.qty) || 0);
+  }
+  return [];
+}
+// Kurangi stok order baru dengan membaca ulang produk TERKINI tepat sebelum
+// menulis — mempersempit jendela race antara pengecekan awal di orders.js dan
+// penulisan akhir, supaya dua order yang datang nyaris bersamaan untuk unit
+// terakhir sebuah produk tidak sama-sama lolos dan membuat stok minus.
+export async function reserveStockFor(items) {
+  if (!Array.isArray(items) || !items.length) return [];
+  const products = await getProducts();
+  const short = applyStockReservation(products, items);
+  if (short.length) return short;
+  await saveProducts(products);
+  return [];
+}
 // Sesuaikan stok mengikuti perpindahan status; menandai `next.stockReturned`.
 async function applyStockTransition(before, next) {
   const wasCanceled = before.status === 'batal';
