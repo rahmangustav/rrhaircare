@@ -5,6 +5,9 @@ dev.log
 *.log
 .DS_Store
 
+# Lockfile Deno yang otomatis dibuat oleh `netlify dev` (bukan bagian proyek)
+deno.lock
+
 # Kredensial Google (akun RR Hair Care) — JANGAN pernah di-commit/deploy
 google/client_secrets*.json
 google/token.json
