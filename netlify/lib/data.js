@@ -487,10 +487,17 @@ export async function deleteSiteImage(key) {
 // ── Media (foto) — disimpan sebagai blob biner ──
 // Terima data URL base64 (mis. "data:image/jpeg;base64,...."), simpan, balikin URL /api/media/<key>.
 export const MAX_MEDIA_BYTES = 4 * 1024 * 1024; // batas ~4 MB per gambar
+// Hanya format raster — SVG DILARANG: bisa memuat <script>, dan /api/media/:key
+// menyajikannya dengan content-type aslinya sehingga kalau dibuka langsung
+// (mis. via target="_blank" di bukti-bayar admin) script di dalamnya jalan
+// sebagai halaman situs sendiri — bisa mencuri token admin dari sessionStorage.
+// order-proof.js (upload bukti bayar) TANPA login, jadi ini jalur publik.
+const ALLOWED_MEDIA_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 export async function saveMedia(dataUrl) {
-  const m = /^data:(image\/[a-zA-Z+]+);base64,(.+)$/s.exec(dataUrl || '');
+  const m = /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/s.exec(dataUrl || '');
   if (!m) return '';
-  const contentType = m[1];
+  const contentType = m[1].toLowerCase();
+  if (!ALLOWED_MEDIA_TYPES.has(contentType)) return '';
   const buf = Buffer.from(m[2], 'base64');
   if (buf.length > MAX_MEDIA_BYTES) {
     const e = new Error('MEDIA_TOO_LARGE'); e.code = 'MEDIA_TOO_LARGE'; throw e;
