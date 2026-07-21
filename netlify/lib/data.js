@@ -211,6 +211,45 @@ export async function noteProofUploaded(ip) {
   await writeJSON('proofAttempts', all);
 }
 
+// ── Pembatas analytics publik (anti banjir /api/hit & /api/goal) ──
+// Keduanya publik, tanpa auth, dan tiap panggilan baca-ubah-tulis SATU blob
+// 'analytics' bersama (lihat recordHit/recordGoal). Tanpa batas ini siapa pun
+// bisa memanggil endpoint berulang kali lewat script (bukan browser asli) dan
+// membanjiri blob itu dengan write, menaikkan biaya invocation Netlify Functions
+// dan memperbesar peluang lost-update di blob analytics. Batas dibuat longgar
+// (jauh di atas pola klik-jelajah wajar) supaya pengunjung asli tak pernah kena.
+const ANALYTICS_MAX_PER_WINDOW = 120; // maks panggilan hit+goal gabungan per IP
+const ANALYTICS_WINDOW_MS = 10 * 60e3; // jendela 10 menit
+
+// Logika murni (tanpa Blobs) — dipisah supaya bisa dites langsung.
+export function computeAnalyticsRateStatus(rec, now) {
+  if (!rec || now - rec.firstAt > ANALYTICS_WINDOW_MS) return { blocked: false, retryAfter: 0 };
+  if (rec.count >= ANALYTICS_MAX_PER_WINDOW)
+    return { blocked: true, retryAfter: Math.ceil((rec.firstAt + ANALYTICS_WINDOW_MS - now) / 1000) };
+  return { blocked: false, retryAfter: 0 };
+}
+export function nextAnalyticsRateRecord(rec, now) {
+  const r = (rec && now - rec.firstAt <= ANALYTICS_WINDOW_MS) ? rec : { count: 0, firstAt: now };
+  return { count: r.count + 1, firstAt: r.firstAt };
+}
+
+export async function analyticsRateStatus(ip) {
+  if (!ip) return { blocked: false, retryAfter: 0 };
+  const all = await readJSON('analyticsAttempts', {});
+  return computeAnalyticsRateStatus(all[ip], Date.now());
+}
+
+export async function noteAnalyticsHit(ip) {
+  if (!ip) return;
+  const all = await readJSON('analyticsAttempts', {});
+  const now = Date.now();
+  for (const k of Object.keys(all)) {
+    if (now - all[k].firstAt > ANALYTICS_WINDOW_MS) delete all[k];
+  }
+  all[ip] = nextAnalyticsRateRecord(all[ip], now);
+  await writeJSON('analyticsAttempts', all);
+}
+
 // Status pesanan yang sah (dipakai untuk memvalidasi input admin).
 export const ORDER_STATUSES = ['menunggu_pembayaran', 'menunggu_verifikasi',
   'diproses', 'dikirim', 'selesai', 'batal'];
