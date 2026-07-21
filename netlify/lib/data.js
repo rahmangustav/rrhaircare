@@ -535,6 +535,11 @@ export function parsePricelistCsv(text) {
 }
 export async function importPricelistCsv(text) {
   const list = parsePricelistCsv(text);
+  if (!list.length) {
+    const err = new Error('CSV tidak berisi baris valid — format tidak dikenali atau file kosong');
+    err.code = 'CSV_EMPTY';
+    throw err;
+  }
   await savePricelist(list);
   return list;
 }
