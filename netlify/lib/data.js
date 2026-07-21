@@ -252,17 +252,24 @@ async function deductStockFor(items) {
 // bisa diuji sebagai fungsi murni. Mengembalikan array id produk yang stoknya
 // tak cukup (kosong = berhasil, snapshot sudah dikurangi; ada isi = snapshot
 // TIDAK diubah sama sekali, jadi gagal sebagian tidak pernah terjadi).
+// Qty digabung per id LEBIH DULU: kalau `items` punya baris duplikat untuk id
+// yang sama (mis. body request /api/orders dirakit manual), mengecek tiap
+// baris terhadap stok mentah yang sama membuat keduanya lolos sendiri-sendiri
+// padahal totalnya melebihi stok -> stok jadi minus setelah dipotong dua kali.
 export function applyStockReservation(products, items) {
-  const short = [];
+  const qtyById = new Map();
   for (const it of items) {
-    const p = products.find(x => x.id === it.id);
-    const qty = Number(it.qty) || 0;
-    if (!p || (Number(p.stock) || 0) < qty) short.push(it.id);
+    qtyById.set(it.id, (qtyById.get(it.id) || 0) + (Number(it.qty) || 0));
+  }
+  const short = [];
+  for (const [id, qty] of qtyById) {
+    const p = products.find(x => x.id === id);
+    if (!p || (Number(p.stock) || 0) < qty) short.push(id);
   }
   if (short.length) return short;
-  for (const it of items) {
-    const p = products.find(x => x.id === it.id);
-    p.stock = (Number(p.stock) || 0) - (Number(it.qty) || 0);
+  for (const [id, qty] of qtyById) {
+    const p = products.find(x => x.id === id);
+    p.stock = (Number(p.stock) || 0) - qty;
   }
   return [];
 }

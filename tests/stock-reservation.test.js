@@ -79,3 +79,18 @@ test('qty non-angka/kosong diperlakukan sebagai 0 (tidak crash, tidak mengurangi
   assert.deepEqual(short, []);
   assert.equal(products[0].stock, 5);
 });
+
+test('item duplikat untuk id yang sama digabung dulu -> stok tidak boleh minus', () => {
+  // Tiap baris (qty 3) sendiri-sendiri di bawah stok (5), tapi totalnya (6) melebihi.
+  const products = [{ id: 'p1', stock: 5 }];
+  const short = applyStockReservation(products, [{ id: 'p1', qty: 3 }, { id: 'p1', qty: 3 }]);
+  assert.deepEqual(short, ['p1'], 'total qty duplikat (6) melebihi stok (5) -> harus gagal');
+  assert.equal(products[0].stock, 5, 'stok tidak boleh berubah kalau reservasi gagal');
+});
+
+test('item duplikat untuk id yang sama, total masih cukup -> digabung dan dikurangi sekali', () => {
+  const products = [{ id: 'p1', stock: 5 }];
+  const short = applyStockReservation(products, [{ id: 'p1', qty: 2 }, { id: 'p1', qty: 3 }]);
+  assert.deepEqual(short, []);
+  assert.equal(products[0].stock, 0, 'total qty duplikat (5) dikurangi sekali dari stok (5)');
+});
