@@ -358,7 +358,7 @@ const SOURCE_HOSTS = [
   [/(^|\.)(facebook\.com|fb\.me|m\.me)$/, 'Facebook'],
   [/(^|\.)tiktok\.com$/, 'TikTok'],
   [/(^|\.)(wa\.me|whatsapp\.com)$/, 'WhatsApp'],
-  [/(^|\.)google\./, 'Google Penelusuran'],
+  [/(^|\.)google\.[a-z]{2,3}(\.[a-z]{2})?$/, 'Google Penelusuran'],
   [/(^|\.)(bing\.com|search\.yahoo\.com|duckduckgo\.com)$/, 'Mesin Pencari Lain'],
   [/(^|\.)threads\.(net|com)$/, 'Threads'],
 ];
