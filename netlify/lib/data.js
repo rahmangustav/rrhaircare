@@ -122,13 +122,19 @@ export async function updateProduct(id, patch) {
   const list = await getProducts();
   const i = list.findIndex(p => p.id === id);
   if (i < 0) return null;
+  const oldImage = list[i].image;
   list[i] = { ...list[i], ...patch,
     price: patch.price !== undefined ? Number(patch.price) : list[i].price,
     stock: patch.stock !== undefined ? Number(patch.stock) : list[i].stock };
-  await saveProducts(list); return list[i];
+  await saveProducts(list);
+  if (patch.image !== undefined && oldImage && oldImage !== patch.image) await deleteMediaByUrl(oldImage);
+  return list[i];
 }
 export async function deleteProduct(id) {
-  await saveProducts((await getProducts()).filter(p => p.id !== id));
+  const list = await getProducts();
+  const item = list.find(p => p.id === id);
+  await saveProducts(list.filter(p => p.id !== id));
+  if (item && item.image) await deleteMediaByUrl(item.image);
 }
 
 // ── Pesanan ──
@@ -548,17 +554,28 @@ export async function addGalleryPhoto(p) {
   list.unshift(item); await writeJSON('gallery', list); return item;
 }
 export async function deleteGalleryPhoto(id) {
-  await writeJSON('gallery', (await getGallery()).filter(g => g.id !== id));
+  const list = await getGallery();
+  const item = list.find(g => g.id === id);
+  await writeJSON('gallery', list.filter(g => g.id !== id));
+  if (item && item.image) await deleteMediaByUrl(item.image);
 }
 
 // ── Foto tetap per bagian halaman (slot bernama, mis. 'about') ──
 // Disimpan sebagai objek { slot: urlMedia }, dipakai untuk foto yang sering diganti.
 export const getSiteImages = () => readJSON('siteImages', {});
 export async function setSiteImage(key, url) {
-  const m = await getSiteImages(); m[key] = url; await writeJSON('siteImages', m); return m;
+  const m = await getSiteImages();
+  const oldUrl = m[key];
+  m[key] = url; await writeJSON('siteImages', m);
+  if (oldUrl && oldUrl !== url) await deleteMediaByUrl(oldUrl);
+  return m;
 }
 export async function deleteSiteImage(key) {
-  const m = await getSiteImages(); delete m[key]; await writeJSON('siteImages', m); return m;
+  const m = await getSiteImages();
+  const oldUrl = m[key];
+  delete m[key]; await writeJSON('siteImages', m);
+  if (oldUrl) await deleteMediaByUrl(oldUrl);
+  return m;
 }
 
 // ── Media (foto) — disimpan sebagai blob biner ──
@@ -588,6 +605,22 @@ export async function getMedia(key) {
   const res = await media().getWithMetadata(key, { type: 'arrayBuffer' });
   if (!res) return null;
   return { data: Buffer.from(res.data), contentType: (res.metadata && res.metadata.contentType) || 'image/jpeg' };
+}
+
+// Ekstrak key blob dari URL yang dikembalikan saveMedia (mis. '/api/media/abc123.jpg'
+// -> 'abc123.jpg'). Fungsi murni — dipisah supaya bisa dites tanpa Blobs. URL yang
+// bukan milik kita sendiri (kosong, eksternal, format lain) mengembalikan ''.
+export function mediaKeyFromUrl(url) {
+  const m = /^\/api\/media\/([^/?#]+)$/.exec(String(url || ''));
+  return m ? m[1] : '';
+}
+// Hapus blob media lama yang sudah tidak dirujuk siapa pun (foto diganti/dihapus).
+// Diam-diam abaikan URL yang bukan media kita sendiri atau kalau delete gagal —
+// ini pembersihan best-effort, bukan bagian dari alur kritis penyimpanan data.
+export async function deleteMediaByUrl(url) {
+  const key = mediaKeyFromUrl(url);
+  if (!key) return;
+  try { await media().delete(key); } catch { /* best-effort */ }
 }
 
 // ── Helper HTTP ──
