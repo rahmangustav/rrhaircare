@@ -388,6 +388,14 @@ function visitorId(ip, day) {
   return createHmac('sha256', VISITOR_SALT).update(day + '|' + ip).digest('hex').slice(0, 16);
 }
 
+// path bisa datang apa adanya dari body request publik tanpa auth (POST /api/hit)
+// — beda dari ref/campaign yang sudah di-.toString().slice() di hit.js sebelum
+// dikirim ke sini. Kalau bukan string (objek/array/angka/dll), fallback ke '/'
+// alih-alih crash di .slice() (dulu: TypeError tak tertangani -> 500).
+export function normalizePath(path) {
+  return (typeof path === 'string' && path ? path : '/').slice(0, 120);
+}
+
 // Keunikan pengunjung ditentukan SERVER dari IP, bukan dari klien (anti manipulasi).
 export async function recordHit({ path = '/', ip = '', ref = '', campaign = '', selfHost = '' } = {}) {
   const a = (await stats().get('analytics', { type: 'json' })) || emptyStats();
@@ -403,7 +411,7 @@ export async function recordHit({ path = '/', ip = '', ref = '', campaign = '', 
     a.total.visitors++; a.days[day].visitors++;
   }
 
-  const p = (path || '/').slice(0, 120);
+  const p = normalizePath(path);
   a.pages[p] = (a.pages[p] || 0) + 1;
 
   // Asal kunjungan: dicatat sekali per pengunjung per hari (bukan tiap halaman),
