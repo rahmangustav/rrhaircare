@@ -352,6 +352,14 @@ export function applyStockReservation(products, items) {
   }
   return [];
 }
+// Cocokkan shippingId dari klien terhadap daftar opsi ongkir yang sah di
+// settings. Dipisah jadi fungsi murni supaya bisa diuji: id yang tak dikenal
+// (termasuk kosong/null/opsi yang sudah dihapus admin) HARUS ditolak, bukan
+// diam-diam jatuh ke ongkir Rp0 — order lewat panggilan API langsung (bukan
+// lewat form checkout) bisa memakai id apa saja.
+export function resolveShipping(shippingOptions, shippingId) {
+  return (shippingOptions || []).find(s => s.id === shippingId) || null;
+}
 // Kurangi stok order baru dengan membaca ulang produk TERKINI tepat sebelum
 // menulis — mempersempit jendela race antara pengecekan awal di orders.js dan
 // penulisan akhir, supaya dua order yang datang nyaris bersamaan untuk unit
