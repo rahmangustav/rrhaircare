@@ -94,3 +94,30 @@ test('item duplikat untuk id yang sama, total masih cukup -> digabung dan dikura
   assert.deepEqual(short, []);
   assert.equal(products[0].stock, 0, 'total qty duplikat (5) dikurangi sekali dari stok (5)');
 });
+
+// Bug yang diperbaiki: /api/products (publik) memfilter active !== false,
+// tapi /api/orders (POST, publik, tanpa auth) tidak pernah mengecek `active`
+// sama sekali — produk yang sudah dinonaktifkan admin (toggle "Tampilkan di
+// toko", mis. dihentikan/recall) tetap tembus stok cukup dan bisa dipesan
+// langsung lewat panggilan API walau tidak lagi tampil di toko.
+test('produk nonaktif (active:false) -> ditandai short walau stok cukup', () => {
+  const products = [{ id: 'p1', stock: 10, active: false }];
+  const short = applyStockReservation(products, [{ id: 'p1', qty: 2 }]);
+  assert.deepEqual(short, ['p1']);
+  assert.equal(products[0].stock, 10, 'stok tidak boleh berubah kalau produk nonaktif');
+});
+
+test('produk tanpa field active (default aktif) -> tetap lolos seperti biasa', () => {
+  const products = [{ id: 'p1', stock: 10 }];
+  const short = applyStockReservation(products, [{ id: 'p1', qty: 2 }]);
+  assert.deepEqual(short, []);
+  assert.equal(products[0].stock, 8);
+});
+
+test('order multi-item, satu produk nonaktif -> GAGAL SEBAGAI SATU UNIT', () => {
+  const products = [{ id: 'p1', stock: 10 }, { id: 'p2', stock: 10, active: false }];
+  const short = applyStockReservation(products, [{ id: 'p1', qty: 2 }, { id: 'p2', qty: 1 }]);
+  assert.deepEqual(short, ['p2']);
+  assert.equal(products[0].stock, 10, 'p1 tidak boleh ikut terpotong walau lolos sendiri');
+  assert.equal(products[1].stock, 10);
+});
