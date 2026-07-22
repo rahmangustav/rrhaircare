@@ -79,3 +79,18 @@ test('admin.js: nama layanan berkutip-tunggal tidak lagi memutus onclick="delPri
   const encodedName = onclick.slice("delPrice('h1','".length, -"')".length);
   assert.ok(!encodedName.includes("'"), 'tidak boleh ada kutip tunggal mentah di dalam nilai ter-escape');
 });
+
+// Bug terpisah dari yang di atas: tombol Edit produk/layanan dulu menyisipkan
+// JSON.stringify(objek) MENTAH ke dalam onclick='...'. JSON.stringify hanya
+// meng-escape " dan \ — TIDAK meng-escape kutip tunggal — jadi nama produk/
+// layanan yang mengandung ' (mis. hasil import CSV vendor POS) memutus atribut
+// onclick berkutip-tunggal dan bisa menyuntik HTML/JS bebas (mis. <img
+// onerror=...>) yang jalan di sesi admin yang sedang login. Perbaikannya:
+// data-edit="id" + lookup dari cache array, bukan interpolasi JSON ke atribut.
+test('admin.js: tombol Edit produk/layanan tidak lagi menyisipkan JSON.stringify mentah ke onclick', () => {
+  const src = readFileSync(path.join(root, 'public/js/admin.js'), 'utf8');
+  assert.ok(!/onclick=['"]edit(Product|Price)\(\$\{JSON\.stringify/.test(src),
+    'onclick tidak boleh lagi memuat JSON.stringify(objek) mentah — rentan XSS lewat kutip tunggal di nama');
+  assert.match(src, /data-edit="\$\{esc\(p\.id\)\}"/, 'baris produk harus pakai data-edit + lookup, bukan JSON inline');
+  assert.match(src, /data-edit="\$\{esc\(h\.id\)\}"/, 'baris layanan harus pakai data-edit + lookup, bukan JSON inline');
+});
