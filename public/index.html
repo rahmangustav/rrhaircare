@@ -1188,6 +1188,7 @@
   <div class="lightbox-caption" id="lightboxCaption"></div>
 </div>
 
+<script src="/js/booking-time.js"></script>
 <script>
   // Navbar scroll
   window.addEventListener('scroll', () => {
@@ -1221,8 +1222,9 @@
     if (!document.hidden) setTimeout(tampilkanSisanya, 100);
   });
 
-  // Min date for booking
-  const today = new Date().toISOString().split('T')[0];
+  // Min date for booking — pakai tanggal WIB (bukan toISOString mentah, yang
+  // memakai UTC dan bakal salah satu hari lebih awal tiap 00:00–07:00 WIB).
+  const today = BookingTime.todayWIB();
   document.getElementById('tanggal').min = today;
 
   // Booking ke WA
@@ -1237,6 +1239,10 @@
 
     if (!nama || !phone || !layanan || !tanggal || !jam) {
       showToast('⚠️ Mohon lengkapi semua field yang wajib diisi.');
+      return;
+    }
+    if (BookingTime.isSlotPast(tanggal, jam)) {
+      showToast('⚠️ Jam yang dipilih sudah lewat untuk hari ini. Pilih jam lain atau tanggal berikutnya.');
       return;
     }
 
