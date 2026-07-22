@@ -131,6 +131,18 @@ export async function deleteProduct(id) {
   await saveProducts((await getProducts()).filter(p => p.id !== id));
 }
 
+// Bangun field yang akan diterapkan ke produk dari body request admin
+// (dipakai untuk POST tambah & PUT edit). `active` HANYA disertakan kalau
+// memang dikirim eksplisit oleh klien — kalau tidak, PUT edit produk (mis.
+// cuma ubah harga/stok) akan diam-diam memaksa produk aktif lagi walau
+// sebelumnya sengaja dinonaktifkan (toggle "Tampilkan di toko").
+export function buildProductFields(b) {
+  const fields = { name: b.name, category: b.category, price: b.price, stock: b.stock,
+    description: b.description };
+  if (b.active !== undefined) fields.active = b.active !== false && b.active !== 'false';
+  return fields;
+}
+
 // ── Pesanan ──
 // Stok dipotong saat order dibuat (menahan barang). Kalau order dibatalkan
 // stok dikembalikan; order 'menunggu_pembayaran' yang lewat batas waktu
