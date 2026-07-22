@@ -55,7 +55,7 @@ const Cart = (() => {
     box.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => remove(b.dataset.rm));
   }
   const qtyOf = id => (items.find(i => i.id === id)||{}).qty || 1;
-  function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+  function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
   document.addEventListener('DOMContentLoaded', render);
   render();
