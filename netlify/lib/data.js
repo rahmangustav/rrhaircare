@@ -30,13 +30,27 @@ const LOGIN_MAX_FAILS = 5;            // gagal berturut sebelum dikunci
 const LOGIN_WINDOW_MS = 15 * 60e3;    // jendela penghitungan kegagalan
 const LOGIN_LOCK_MS = 15 * 60e3;      // lama kunci setelah batas tercapai
 
+// Logika murni (tanpa Blobs) — dipisah supaya bisa dites langsung, mengikuti
+// pola computeProofRateStatus/computeOrderRateStatus di atas.
+export function computeLoginRateStatus(rec, now) {
+  if (rec && rec.lockedUntil && rec.lockedUntil > now)
+    return { blocked: true, retryAfter: Math.ceil((rec.lockedUntil - now) / 1000) };
+  return { blocked: false, retryAfter: 0 };
+}
+// ok=true (login sukses) -> null berarti rekam jejak IP ini dihapus.
+export function nextLoginRateRecord(rec, now, ok) {
+  if (ok) return null;
+  const base = (rec && now - (rec.firstAt || 0) <= LOGIN_WINDOW_MS)
+    ? { count: rec.count, firstAt: rec.firstAt } : { count: 0, firstAt: now };
+  const r = { count: base.count + 1, firstAt: base.firstAt };
+  if (r.count >= LOGIN_MAX_FAILS) r.lockedUntil = now + LOGIN_LOCK_MS;
+  return r;
+}
+
 // Cek status kunci untuk sebuah IP; panggil sebelum verifikasi password.
 export async function loginRateStatus(ip) {
   const all = await readJSON('loginAttempts', {});
-  const rec = all[ip];
-  if (rec && rec.lockedUntil && rec.lockedUntil > Date.now())
-    return { blocked: true, retryAfter: Math.ceil((rec.lockedUntil - Date.now()) / 1000) };
-  return { blocked: false, retryAfter: 0 };
+  return computeLoginRateStatus(all[ip], Date.now());
 }
 
 // Catat hasil login: sukses membersihkan hitungan, gagal menaikkannya.
@@ -50,15 +64,8 @@ export async function noteLogin(ip, ok) {
       (r.firstAt && now - r.firstAt < LOGIN_WINDOW_MS);
     if (!active) delete all[k];
   }
-  if (ok) {
-    delete all[ip];
-  } else {
-    let r = all[ip];
-    if (!r || now - (r.firstAt || 0) > LOGIN_WINDOW_MS) r = { count: 0, firstAt: now };
-    r.count++;
-    if (r.count >= LOGIN_MAX_FAILS) r.lockedUntil = now + LOGIN_LOCK_MS;
-    all[ip] = r;
-  }
+  const next = nextLoginRateRecord(all[ip], now, ok);
+  if (next) all[ip] = next; else delete all[ip];
   await writeJSON('loginAttempts', all);
 }
 
@@ -122,13 +129,31 @@ export async function updateProduct(id, patch) {
   const list = await getProducts();
   const i = list.findIndex(p => p.id === id);
   if (i < 0) return null;
+  const oldImage = list[i].image;
   list[i] = { ...list[i], ...patch,
     price: patch.price !== undefined ? Number(patch.price) : list[i].price,
     stock: patch.stock !== undefined ? Number(patch.stock) : list[i].stock };
-  await saveProducts(list); return list[i];
+  await saveProducts(list);
+  if (patch.image !== undefined && oldImage && oldImage !== patch.image) await deleteMediaByUrl(oldImage);
+  return list[i];
 }
 export async function deleteProduct(id) {
-  await saveProducts((await getProducts()).filter(p => p.id !== id));
+  const list = await getProducts();
+  const item = list.find(p => p.id === id);
+  await saveProducts(list.filter(p => p.id !== id));
+  if (item && item.image) await deleteMediaByUrl(item.image);
+}
+
+// Bangun field yang akan diterapkan ke produk dari body request admin
+// (dipakai untuk POST tambah & PUT edit). `active` HANYA disertakan kalau
+// memang dikirim eksplisit oleh klien — kalau tidak, PUT edit produk (mis.
+// cuma ubah harga/stok) akan diam-diam memaksa produk aktif lagi walau
+// sebelumnya sengaja dinonaktifkan (toggle "Tampilkan di toko").
+export function buildProductFields(b) {
+  const fields = { name: b.name, category: b.category, price: b.price, stock: b.stock,
+    description: b.description };
+  if (b.active !== undefined) fields.active = b.active !== false && b.active !== 'false';
+  return fields;
 }
 
 // ── Pesanan ──
@@ -211,6 +236,45 @@ export async function noteProofUploaded(ip) {
   await writeJSON('proofAttempts', all);
 }
 
+// ── Pembatas analytics publik (anti banjir /api/hit & /api/goal) ──
+// Keduanya publik, tanpa auth, dan tiap panggilan baca-ubah-tulis SATU blob
+// 'analytics' bersama (lihat recordHit/recordGoal). Tanpa batas ini siapa pun
+// bisa memanggil endpoint berulang kali lewat script (bukan browser asli) dan
+// membanjiri blob itu dengan write, menaikkan biaya invocation Netlify Functions
+// dan memperbesar peluang lost-update di blob analytics. Batas dibuat longgar
+// (jauh di atas pola klik-jelajah wajar) supaya pengunjung asli tak pernah kena.
+const ANALYTICS_MAX_PER_WINDOW = 120; // maks panggilan hit+goal gabungan per IP
+const ANALYTICS_WINDOW_MS = 10 * 60e3; // jendela 10 menit
+
+// Logika murni (tanpa Blobs) — dipisah supaya bisa dites langsung.
+export function computeAnalyticsRateStatus(rec, now) {
+  if (!rec || now - rec.firstAt > ANALYTICS_WINDOW_MS) return { blocked: false, retryAfter: 0 };
+  if (rec.count >= ANALYTICS_MAX_PER_WINDOW)
+    return { blocked: true, retryAfter: Math.ceil((rec.firstAt + ANALYTICS_WINDOW_MS - now) / 1000) };
+  return { blocked: false, retryAfter: 0 };
+}
+export function nextAnalyticsRateRecord(rec, now) {
+  const r = (rec && now - rec.firstAt <= ANALYTICS_WINDOW_MS) ? rec : { count: 0, firstAt: now };
+  return { count: r.count + 1, firstAt: r.firstAt };
+}
+
+export async function analyticsRateStatus(ip) {
+  if (!ip) return { blocked: false, retryAfter: 0 };
+  const all = await readJSON('analyticsAttempts', {});
+  return computeAnalyticsRateStatus(all[ip], Date.now());
+}
+
+export async function noteAnalyticsHit(ip) {
+  if (!ip) return;
+  const all = await readJSON('analyticsAttempts', {});
+  const now = Date.now();
+  for (const k of Object.keys(all)) {
+    if (now - all[k].firstAt > ANALYTICS_WINDOW_MS) delete all[k];
+  }
+  all[ip] = nextAnalyticsRateRecord(all[ip], now);
+  await writeJSON('analyticsAttempts', all);
+}
+
 // Status pesanan yang sah (dipakai untuk memvalidasi input admin).
 export const ORDER_STATUSES = ['menunggu_pembayaran', 'menunggu_verifikasi',
   'diproses', 'dikirim', 'selesai', 'batal'];
@@ -224,6 +288,21 @@ export const ORDER_STATUSES = ['menunggu_pembayaran', 'menunggu_verifikasi',
 export const PROOF_UPLOADABLE_STATUSES = ['menunggu_pembayaran', 'menunggu_verifikasi'];
 
 export const getOrders = () => readJSON('orders', []);
+
+// Batasi panjang field data pengiriman dari checkout publik tanpa auth.
+// Endpoint publik lain (hit.js, goal.js, cleanPriceItem di atas) semua
+// membatasi panjang input teks bebas; /api/orders sebelumnya tidak — jadi
+// address/note bisa berukuran bebas dan terus ditulis ke satu blob `orders`
+// yang dibaca-tulis-ulang UTUH di tiap order baru & tiap upload bukti bayar.
+export function sanitizeCustomer(customer) {
+  return {
+    name: (customer.name || '').toString().slice(0, 80),
+    phone: (customer.phone || '').toString().slice(0, 20),
+    address: (customer.address || '').toString().slice(0, 300),
+    city: (customer.city || '').toString().slice(0, 60),
+    note: (customer.note || '').toString().slice(0, 300),
+  };
+}
 
 // Kembalikan stok produk untuk daftar item pesanan.
 async function restoreStockFor(items) {
@@ -252,17 +331,24 @@ async function deductStockFor(items) {
 // bisa diuji sebagai fungsi murni. Mengembalikan array id produk yang stoknya
 // tak cukup (kosong = berhasil, snapshot sudah dikurangi; ada isi = snapshot
 // TIDAK diubah sama sekali, jadi gagal sebagian tidak pernah terjadi).
+// Qty digabung per id LEBIH DULU: kalau `items` punya baris duplikat untuk id
+// yang sama (mis. body request /api/orders dirakit manual), mengecek tiap
+// baris terhadap stok mentah yang sama membuat keduanya lolos sendiri-sendiri
+// padahal totalnya melebihi stok -> stok jadi minus setelah dipotong dua kali.
 export function applyStockReservation(products, items) {
-  const short = [];
+  const qtyById = new Map();
   for (const it of items) {
-    const p = products.find(x => x.id === it.id);
-    const qty = Number(it.qty) || 0;
-    if (!p || (Number(p.stock) || 0) < qty) short.push(it.id);
+    qtyById.set(it.id, (qtyById.get(it.id) || 0) + (Number(it.qty) || 0));
+  }
+  const short = [];
+  for (const [id, qty] of qtyById) {
+    const p = products.find(x => x.id === id);
+    if (!p || (Number(p.stock) || 0) < qty) short.push(id);
   }
   if (short.length) return short;
-  for (const it of items) {
-    const p = products.find(x => x.id === it.id);
-    p.stock = (Number(p.stock) || 0) - (Number(it.qty) || 0);
+  for (const [id, qty] of qtyById) {
+    const p = products.find(x => x.id === id);
+    p.stock = (Number(p.stock) || 0) - qty;
   }
   return [];
 }
@@ -366,7 +452,7 @@ const SOURCE_HOSTS = [
   [/(^|\.)(facebook\.com|fb\.me|m\.me)$/, 'Facebook'],
   [/(^|\.)tiktok\.com$/, 'TikTok'],
   [/(^|\.)(wa\.me|whatsapp\.com)$/, 'WhatsApp'],
-  [/(^|\.)google\./, 'Google Penelusuran'],
+  [/(^|\.)google\.[a-z]{2,3}(\.[a-z]{2})?$/, 'Google Penelusuran'],
   [/(^|\.)(bing\.com|search\.yahoo\.com|duckduckgo\.com)$/, 'Mesin Pencari Lain'],
   [/(^|\.)threads\.(net|com)$/, 'Threads'],
 ];
@@ -396,6 +482,14 @@ function visitorId(ip, day) {
   return createHmac('sha256', VISITOR_SALT).update(day + '|' + ip).digest('hex').slice(0, 16);
 }
 
+// path bisa datang apa adanya dari body request publik tanpa auth (POST /api/hit)
+// — beda dari ref/campaign yang sudah di-.toString().slice() di hit.js sebelum
+// dikirim ke sini. Kalau bukan string (objek/array/angka/dll), fallback ke '/'
+// alih-alih crash di .slice() (dulu: TypeError tak tertangani -> 500).
+export function normalizePath(path) {
+  return (typeof path === 'string' && path ? path : '/').slice(0, 120);
+}
+
 // Keunikan pengunjung ditentukan SERVER dari IP, bukan dari klien (anti manipulasi).
 export async function recordHit({ path = '/', ip = '', ref = '', campaign = '', selfHost = '' } = {}) {
   const a = (await stats().get('analytics', { type: 'json' })) || emptyStats();
@@ -411,7 +505,7 @@ export async function recordHit({ path = '/', ip = '', ref = '', campaign = '', 
     a.total.visitors++; a.days[day].visitors++;
   }
 
-  const p = (path || '/').slice(0, 120);
+  const p = normalizePath(path);
   a.pages[p] = (a.pages[p] || 0) + 1;
 
   // Asal kunjungan: dicatat sekali per pengunjung per hari (bukan tiap halaman),
@@ -543,6 +637,11 @@ export function parsePricelistCsv(text) {
 }
 export async function importPricelistCsv(text) {
   const list = parsePricelistCsv(text);
+  if (!list.length) {
+    const err = new Error('CSV tidak berisi baris valid — format tidak dikenali atau file kosong');
+    err.code = 'CSV_EMPTY';
+    throw err;
+  }
   await savePricelist(list);
   return list;
 }
@@ -556,17 +655,28 @@ export async function addGalleryPhoto(p) {
   list.unshift(item); await writeJSON('gallery', list); return item;
 }
 export async function deleteGalleryPhoto(id) {
-  await writeJSON('gallery', (await getGallery()).filter(g => g.id !== id));
+  const list = await getGallery();
+  const item = list.find(g => g.id === id);
+  await writeJSON('gallery', list.filter(g => g.id !== id));
+  if (item && item.image) await deleteMediaByUrl(item.image);
 }
 
 // ── Foto tetap per bagian halaman (slot bernama, mis. 'about') ──
 // Disimpan sebagai objek { slot: urlMedia }, dipakai untuk foto yang sering diganti.
 export const getSiteImages = () => readJSON('siteImages', {});
 export async function setSiteImage(key, url) {
-  const m = await getSiteImages(); m[key] = url; await writeJSON('siteImages', m); return m;
+  const m = await getSiteImages();
+  const oldUrl = m[key];
+  m[key] = url; await writeJSON('siteImages', m);
+  if (oldUrl && oldUrl !== url) await deleteMediaByUrl(oldUrl);
+  return m;
 }
 export async function deleteSiteImage(key) {
-  const m = await getSiteImages(); delete m[key]; await writeJSON('siteImages', m); return m;
+  const m = await getSiteImages();
+  const oldUrl = m[key];
+  delete m[key]; await writeJSON('siteImages', m);
+  if (oldUrl) await deleteMediaByUrl(oldUrl);
+  return m;
 }
 
 // ── Media (foto) — disimpan sebagai blob biner ──
@@ -596,6 +706,22 @@ export async function getMedia(key) {
   const res = await media().getWithMetadata(key, { type: 'arrayBuffer' });
   if (!res) return null;
   return { data: Buffer.from(res.data), contentType: (res.metadata && res.metadata.contentType) || 'image/jpeg' };
+}
+
+// Ekstrak key blob dari URL yang dikembalikan saveMedia (mis. '/api/media/abc123.jpg'
+// -> 'abc123.jpg'). Fungsi murni — dipisah supaya bisa dites tanpa Blobs. URL yang
+// bukan milik kita sendiri (kosong, eksternal, format lain) mengembalikan ''.
+export function mediaKeyFromUrl(url) {
+  const m = /^\/api\/media\/([^/?#]+)$/.exec(String(url || ''));
+  return m ? m[1] : '';
+}
+// Hapus blob media lama yang sudah tidak dirujuk siapa pun (foto diganti/dihapus).
+// Diam-diam abaikan URL yang bukan media kita sendiri atau kalau delete gagal —
+// ini pembersihan best-effort, bukan bagian dari alur kritis penyimpanan data.
+export async function deleteMediaByUrl(url) {
+  const key = mediaKeyFromUrl(url);
+  if (!key) return;
+  try { await media().delete(key); } catch { /* best-effort */ }
 }
 
 // ── Helper HTTP ──

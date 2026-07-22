@@ -1,5 +1,5 @@
 import { getProducts, getSettings, addOrder, expireStaleOrders,
-  orderRateStatus, noteOrderCreated, reserveStockFor, resolveShipping, json } from '../lib/data.js';
+  orderRateStatus, noteOrderCreated, reserveStockFor, resolveShipping, sanitizeCustomer, json } from '../lib/data.js';
 
 export default async (req, context) => {
   if (req.method !== 'POST') return json({ error: 'Method tidak didukung' }, 405);
@@ -48,8 +48,7 @@ export default async (req, context) => {
   const order = await addOrder({
     items: orderItems, subtotal, shipping: { label: ship.label, price: ship.price },
     total: subtotal + ship.price,
-    customer: { name: customer.name, phone: customer.phone, address: customer.address,
-      city: customer.city || '', note: customer.note || '' },
+    customer: sanitizeCustomer(customer),
     paymentProof: ''
   });
   await noteOrderCreated(ip);

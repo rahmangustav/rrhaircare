@@ -4,6 +4,11 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Toko — RR Hair Care</title>
+<meta name="description" content="Belanja produk perawatan rambut pilihan RR Hair Care — bisa diambil langsung di salon Koja, Jakarta Utara atau dikirim."/>
+<link rel="canonical" href="https://rrhaircare.id/toko"/>
+<meta property="og:title" content="Toko — RR Hair Care"/>
+<meta property="og:description" content="Belanja produk perawatan rambut pilihan RR Hair Care."/>
+<meta property="og:url" content="https://rrhaircare.id/toko"/>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 <link rel="stylesheet" href="/css/store.css"/>
@@ -93,7 +98,7 @@ async function loadProducts(){
   renderTabs();
   renderGrid();
 }
-function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 loadProducts();
 </script>
 <script src="/js/hit.js" defer></script>
