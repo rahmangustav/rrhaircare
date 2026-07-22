@@ -237,6 +237,21 @@ export const PROOF_UPLOADABLE_STATUSES = ['menunggu_pembayaran', 'menunggu_verif
 
 export const getOrders = () => readJSON('orders', []);
 
+// Batasi panjang field data pengiriman dari checkout publik tanpa auth.
+// Endpoint publik lain (hit.js, goal.js, cleanPriceItem di atas) semua
+// membatasi panjang input teks bebas; /api/orders sebelumnya tidak — jadi
+// address/note bisa berukuran bebas dan terus ditulis ke satu blob `orders`
+// yang dibaca-tulis-ulang UTUH di tiap order baru & tiap upload bukti bayar.
+export function sanitizeCustomer(customer) {
+  return {
+    name: (customer.name || '').toString().slice(0, 80),
+    phone: (customer.phone || '').toString().slice(0, 20),
+    address: (customer.address || '').toString().slice(0, 300),
+    city: (customer.city || '').toString().slice(0, 60),
+    note: (customer.note || '').toString().slice(0, 300),
+  };
+}
+
 // Kembalikan stok produk untuk daftar item pesanan.
 async function restoreStockFor(items) {
   if (!Array.isArray(items) || !items.length) return;
