@@ -1,7 +1,7 @@
 // Admin panel logic
 let TOKEN = sessionStorage.getItem('rrhc_admin');
 const rupiah = n => 'Rp' + (Number(n)||0).toLocaleString('id-ID');
-const esc = s => String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const esc = s => String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
   clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2400); }
 
