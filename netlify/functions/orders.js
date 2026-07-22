@@ -1,5 +1,5 @@
 import { getProducts, getSettings, addOrder, expireStaleOrders,
-  orderRateStatus, noteOrderCreated, reserveStockFor, json } from '../lib/data.js';
+  orderRateStatus, noteOrderCreated, reserveStockFor, resolveShipping, json } from '../lib/data.js';
 
 export default async (req, context) => {
   if (req.method !== 'POST') return json({ error: 'Method tidak didukung' }, 405);
@@ -33,7 +33,8 @@ export default async (req, context) => {
     subtotal += p.price * qty;
     orderItems.push({ id: p.id, name: p.name, price: p.price, qty });
   }
-  const ship = (settings.shippingOptions || []).find(s => s.id === shippingId) || { label: '-', price: 0 };
+  const ship = resolveShipping(settings.shippingOptions, shippingId);
+  if (!ship) return json({ error: 'Opsi pengiriman tidak valid' }, 400);
 
   // Pengecekan stok di atas cuma gagal-cepat (UX) dari snapshot awal `products`.
   // Otoritas sebenarnya ada di reserveStockFor, yang membaca ulang stok TERKINI
