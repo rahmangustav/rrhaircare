@@ -27,7 +27,7 @@ export default async (req, context) => {
   const orderItems = [];
   for (const it of items) {
     const p = products.find(x => x.id === it.id);
-    if (!p) return json({ error: 'Produk tidak ditemukan' }, 400);
+    if (!p || p.active === false) return json({ error: 'Produk tidak ditemukan' }, 400);
     const qty = Math.max(1, Number(it.qty) || 1);
     if (p.stock < qty) return json({ error: `Stok "${p.name}" tidak cukup (sisa ${p.stock})` }, 400);
     subtotal += p.price * qty;

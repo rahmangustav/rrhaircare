@@ -335,6 +335,11 @@ async function deductStockFor(items) {
 // yang sama (mis. body request /api/orders dirakit manual), mengecek tiap
 // baris terhadap stok mentah yang sama membuat keduanya lolos sendiri-sendiri
 // padahal totalnya melebihi stok -> stok jadi minus setelah dipotong dua kali.
+// Produk dengan active === false (toggle "Tampilkan di toko" admin) DITOLAK
+// di sini juga, bukan cuma difilter di /api/products — endpoint /api/orders
+// bisa dipanggil langsung dengan id produk yang sudah dinonaktifkan (mis.
+// dihentikan/recall), dan ini adalah otoritas terakhir yang membaca stok
+// TERKINI (lihat reserveStockFor), jadi paling tepat untuk menutup celahnya.
 export function applyStockReservation(products, items) {
   const qtyById = new Map();
   for (const it of items) {
@@ -343,7 +348,7 @@ export function applyStockReservation(products, items) {
   const short = [];
   for (const [id, qty] of qtyById) {
     const p = products.find(x => x.id === id);
-    if (!p || (Number(p.stock) || 0) < qty) short.push(id);
+    if (!p || p.active === false || (Number(p.stock) || 0) < qty) short.push(id);
   }
   if (short.length) return short;
   for (const [id, qty] of qtyById) {
