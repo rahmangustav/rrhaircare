@@ -30,13 +30,27 @@ const LOGIN_MAX_FAILS = 5;            // gagal berturut sebelum dikunci
 const LOGIN_WINDOW_MS = 15 * 60e3;    // jendela penghitungan kegagalan
 const LOGIN_LOCK_MS = 15 * 60e3;      // lama kunci setelah batas tercapai
 
+// Logika murni (tanpa Blobs) — dipisah supaya bisa dites langsung, mengikuti
+// pola computeProofRateStatus/computeOrderRateStatus di atas.
+export function computeLoginRateStatus(rec, now) {
+  if (rec && rec.lockedUntil && rec.lockedUntil > now)
+    return { blocked: true, retryAfter: Math.ceil((rec.lockedUntil - now) / 1000) };
+  return { blocked: false, retryAfter: 0 };
+}
+// ok=true (login sukses) -> null berarti rekam jejak IP ini dihapus.
+export function nextLoginRateRecord(rec, now, ok) {
+  if (ok) return null;
+  const base = (rec && now - (rec.firstAt || 0) <= LOGIN_WINDOW_MS)
+    ? { count: rec.count, firstAt: rec.firstAt } : { count: 0, firstAt: now };
+  const r = { count: base.count + 1, firstAt: base.firstAt };
+  if (r.count >= LOGIN_MAX_FAILS) r.lockedUntil = now + LOGIN_LOCK_MS;
+  return r;
+}
+
 // Cek status kunci untuk sebuah IP; panggil sebelum verifikasi password.
 export async function loginRateStatus(ip) {
   const all = await readJSON('loginAttempts', {});
-  const rec = all[ip];
-  if (rec && rec.lockedUntil && rec.lockedUntil > Date.now())
-    return { blocked: true, retryAfter: Math.ceil((rec.lockedUntil - Date.now()) / 1000) };
-  return { blocked: false, retryAfter: 0 };
+  return computeLoginRateStatus(all[ip], Date.now());
 }
 
 // Catat hasil login: sukses membersihkan hitungan, gagal menaikkannya.
@@ -50,15 +64,8 @@ export async function noteLogin(ip, ok) {
       (r.firstAt && now - r.firstAt < LOGIN_WINDOW_MS);
     if (!active) delete all[k];
   }
-  if (ok) {
-    delete all[ip];
-  } else {
-    let r = all[ip];
-    if (!r || now - (r.firstAt || 0) > LOGIN_WINDOW_MS) r = { count: 0, firstAt: now };
-    r.count++;
-    if (r.count >= LOGIN_MAX_FAILS) r.lockedUntil = now + LOGIN_LOCK_MS;
-    all[ip] = r;
-  }
+  const next = nextLoginRateRecord(all[ip], now, ok);
+  if (next) all[ip] = next; else delete all[ip];
   await writeJSON('loginAttempts', all);
 }
 
