@@ -53,8 +53,10 @@ document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () =>
 }));
 
 // ── Produk ──
+let _productsCache = [];
 async function loadProducts(){
   const list = await api('/api/admin/products');
+  _productsCache = list;
   const body = document.getElementById('prodBody');
   if (!list.length){ body.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:30px">Belum ada produk. Klik “Tambah Produk”.</td></tr>'; return; }
   body.innerHTML = list.map(p => {
@@ -67,10 +69,12 @@ async function loadProducts(){
       <td>${p.stock}</td>
       <td>${p.active!==false?'<span class="badge b-kirim">Tampil</span>':'<span class="badge b-selesai">Hidden</span>'}</td>
       <td style="white-space:nowrap">
-        <button class="icon-btn" onclick='editProduct(${JSON.stringify(p)})'><i class="fa-solid fa-pen"></i></button>
-        <button class="icon-btn danger" onclick="delProduct('${p.id}','${esc(p.name)}')"><i class="fa-solid fa-trash-can"></i></button>
+        <button class="icon-btn" data-edit="${esc(p.id)}"><i class="fa-solid fa-pen"></i></button>
+        <button class="icon-btn danger" data-del="${esc(p.id)}"><i class="fa-solid fa-trash-can"></i></button>
       </td></tr>`;
   }).join('');
+  body.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => editProduct(_productsCache.find(p=>p.id===b.dataset.edit)));
+  body.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { const p=_productsCache.find(p=>p.id===b.dataset.del); if(p) delProduct(p.id,p.name); });
 }
 function openProduct(){
   document.getElementById('modalTitle').textContent='Tambah Produk';
@@ -351,9 +355,11 @@ document.getElementById('gImg')?.addEventListener('change', async function(){
 });
 
 // ── Daftar Harga ──
+let _pricelistCache = [];
 async function loadPricelist(){
   let list;
   try { list = await api('/api/admin/pricelist'); } catch(e){ return; }
+  _pricelistCache = list;
   document.getElementById('priceCount').textContent = list.length ? `${list.length} layanan` : '';
   const body = document.getElementById('priceBody');
   if (!list.length){ body.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:26px">Belum ada harga. Import CSV atau klik “Tambah Layanan”.</td></tr>'; return; }
@@ -364,9 +370,11 @@ async function loadPricelist(){
     <td>${h.promo?`<span style="color:#b0603f">${rupiah(h.promo)}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
     <td style="color:var(--muted);font-size:.82rem">${esc(h.duration||'')}</td>
     <td style="white-space:nowrap">
-      <button class="icon-btn" onclick='editPrice(${JSON.stringify(h)})'><i class="fa-solid fa-pen"></i></button>
-      <button class="icon-btn danger" onclick="delPrice('${h.id}','${esc(h.name)}')"><i class="fa-solid fa-trash-can"></i></button>
+      <button class="icon-btn" data-edit="${esc(h.id)}"><i class="fa-solid fa-pen"></i></button>
+      <button class="icon-btn danger" data-del="${esc(h.id)}"><i class="fa-solid fa-trash-can"></i></button>
     </td></tr>`).join('');
+  body.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => editPrice(_pricelistCache.find(h=>h.id===b.dataset.edit)));
+  body.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { const h=_pricelistCache.find(h=>h.id===b.dataset.del); if(h) delPrice(h.id,h.name); });
 }
 function openPrice(){
   document.getElementById('priceModalTitle').textContent='Tambah Layanan';
