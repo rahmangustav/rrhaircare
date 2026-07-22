@@ -11,8 +11,15 @@ export default async (req, context) => {
     const b = await req.json().catch(() => ({}));
     // Kalau ada field csv → import (ganti semua). Kalau tidak → tambah 1 item.
     if (typeof b.csv === 'string' && b.csv.trim()) {
-      const list = await importPricelistCsv(b.csv);
-      return json({ imported: list.length, list });
+      try {
+        const list = await importPricelistCsv(b.csv);
+        return json({ imported: list.length, list });
+      } catch (e) {
+        if (e.code === 'CSV_EMPTY') {
+          return json({ error: 'Format CSV tidak dikenali atau tidak ada baris valid — daftar harga TIDAK diubah' }, 400);
+        }
+        throw e;
+      }
     }
     if (!b.name) return json({ error: 'Nama layanan wajib diisi' }, 400);
     return json(await addPriceItem(b));
