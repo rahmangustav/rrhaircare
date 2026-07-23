@@ -120,7 +120,7 @@ export async function addProduct(p) {
   const list = await getProducts();
   const item = { id: 'p_' + Date.now().toString(36) + randomBytes(2).toString('hex'),
     name: p.name, category: p.category || 'Produk',
-    price: Number(p.price) || 0, stock: Number(p.stock) || 0,
+    price: Math.max(0, Number(p.price) || 0), stock: Math.max(0, Number(p.stock) || 0),
     description: p.description || '', image: p.image || '',
     active: p.active !== false, createdAt: Date.now() };
   list.unshift(item); await saveProducts(list); return item;
@@ -131,8 +131,8 @@ export async function updateProduct(id, patch) {
   if (i < 0) return null;
   const oldImage = list[i].image;
   list[i] = { ...list[i], ...patch,
-    price: patch.price !== undefined ? Number(patch.price) : list[i].price,
-    stock: patch.stock !== undefined ? Number(patch.stock) : list[i].stock };
+    price: patch.price !== undefined ? Math.max(0, Number(patch.price) || 0) : list[i].price,
+    stock: patch.stock !== undefined ? Math.max(0, Number(patch.stock) || 0) : list[i].stock };
   await saveProducts(list);
   if (patch.image !== undefined && oldImage && oldImage !== patch.image) await deleteMediaByUrl(oldImage);
   return list[i];
@@ -149,9 +149,14 @@ export async function deleteProduct(id) {
 // memang dikirim eksplisit oleh klien — kalau tidak, PUT edit produk (mis.
 // cuma ubah harga/stok) akan diam-diam memaksa produk aktif lagi walau
 // sebelumnya sengaja dinonaktifkan (toggle "Tampilkan di toko").
+// `price`/`stock` dipaksa jadi angka >= 0 di sini (bukan cuma di client lewat
+// `min="0"` pada form admin, yang gampang dilewati lewat panggilan API
+// langsung) — harga negatif yang lolos ke `orders.js` mengurangi subtotal
+// checkout, bukan cuma tampilan salah di /toko.
 export function buildProductFields(b) {
-  const fields = { name: b.name, category: b.category, price: b.price, stock: b.stock,
-    description: b.description };
+  const fields = { name: b.name, category: b.category, description: b.description };
+  if (b.price !== undefined) fields.price = Math.max(0, Number(b.price) || 0);
+  if (b.stock !== undefined) fields.stock = Math.max(0, Number(b.stock) || 0);
   if (b.active !== undefined) fields.active = b.active !== false && b.active !== 'false';
   return fields;
 }
@@ -571,13 +576,14 @@ export const getPricelist = () => readJSON('pricelist', []);
 export const savePricelist = (list) => writeJSON('pricelist', list);
 const newPriceId = () => 'h_' + Date.now().toString(36) + randomBytes(3).toString('hex');
 
-function cleanPriceItem(p) {
+// Logika murni (tanpa Blobs) — dipisah supaya bisa dites langsung.
+export function cleanPriceItem(p) {
   return {
     id: p.id || newPriceId(),
     category: (p.category || 'Lainnya').toString().slice(0, 60),
     name: (p.name || '').toString().slice(0, 120),
-    price: Number(p.price) || 0,
-    promo: Number(p.promo) || 0,
+    price: Math.max(0, Number(p.price) || 0),
+    promo: Math.max(0, Number(p.promo) || 0),
     duration: (p.duration || '').toString().slice(0, 30),
   };
 }
