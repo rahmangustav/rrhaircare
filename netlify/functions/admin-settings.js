@@ -1,4 +1,5 @@
-import { requireAuth, getSettings, saveSettings, saveMedia, hashPassword, deleteMediaByUrl, json } from '../lib/data.js';
+import { requireAuth, getSettings, saveSettings, saveMedia, hashPassword, deleteMediaByUrl,
+  sanitizeShippingOptions, json } from '../lib/data.js';
 
 export default async (req) => {
   if (!(await requireAuth(req))) return json({ error: 'Perlu login admin' }, 401);
@@ -14,7 +15,7 @@ export default async (req) => {
     if (b.storeName !== undefined) patch.storeName = b.storeName;
     if (b.whatsapp !== undefined) patch.whatsapp = b.whatsapp;
     if (b.bankInfo !== undefined) patch.bankInfo = b.bankInfo;
-    if (Array.isArray(b.shippingOptions)) patch.shippingOptions = b.shippingOptions;
+    if (Array.isArray(b.shippingOptions)) patch.shippingOptions = sanitizeShippingOptions(b.shippingOptions);
     let oldQris = '';
     if (b.qrisData) {
       oldQris = (await getSettings()).qrisImage;

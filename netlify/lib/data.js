@@ -360,6 +360,26 @@ export function applyStockReservation(products, items) {
 export function resolveShipping(shippingOptions, shippingId) {
   return (shippingOptions || []).find(s => s.id === shippingId) || null;
 }
+// Bersihkan daftar opsi ongkir dari admin sebelum disimpan. UI admin sudah
+// mengirim price ter-Number()-kan, tapi endpoint /api/admin/settings bisa
+// dipanggil langsung dengan token admin sah (curl/devtools), lewat jalur yang
+// sama seperti celah newPassword di isValidAdminPassword. Tanpa ini, price
+// non-numerik atau hilang lolos tersimpan lalu di orders.js `subtotal +
+// ship.price` jadi penggabungan string (mis. "50000" + "15000ekstra") atau
+// NaN — field total order rusak permanen dan ikut merusak reduce Omzet di
+// dashboard admin (angka string mem-batalkan seluruh penjumlahan berikutnya).
+// Opsi tanpa id/label yang sah dibuang; price dipaksa jadi angka >= 0.
+export function sanitizeShippingOptions(list) {
+  if (!Array.isArray(list)) return [];
+  return list
+    .filter(s => s && typeof s.id === 'string' && s.id.trim() &&
+      typeof s.label === 'string' && s.label.trim())
+    .map(s => {
+      const price = Number(s.price);
+      return { id: s.id.trim(), label: s.label.trim().slice(0, 60),
+        price: Number.isFinite(price) && price >= 0 ? price : 0 };
+    });
+}
 // Kurangi stok order baru dengan membaca ulang produk TERKINI tepat sebelum
 // menulis — mempersempit jendela race antara pengecekan awal di orders.js dan
 // penulisan akhir, supaya dua order yang datang nyaris bersamaan untuk unit
