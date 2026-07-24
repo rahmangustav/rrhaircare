@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   hashPassword, verifyPassword, signToken, verifyToken,
   computeLoginRateStatus, nextLoginRateRecord,
+  parseTokenExp, nextRevokedRecord, isTokenRevoked,
 } from '../netlify/lib/data.js';
 
 // ── hashPassword / verifyPassword ──
@@ -158,4 +159,70 @@ test('simulasi: login sukses di tengah jalan membersihkan hitungan gagal sebelum
   rec = nextLoginRateRecord(rec, now + 20, true);
   assert.equal(rec, null);
   assert.equal(computeLoginRateStatus(rec, now + 20).blocked, false);
+});
+
+// ── parseTokenExp / nextRevokedRecord / isTokenRevoked ──
+// Token admin stateless tetap sah sampai `exp` (12 jam) walau tombol "Keluar"
+// diklik — sebelum ini, logout murni kosmetik di klien (lihat catatan di
+// data.js). Fungsi-fungsi ini mencabut token spesifik (by signature) di server.
+
+test('parseTokenExp: token valid -> mengembalikan angka exp', () => {
+  const token = signToken('secret-test', 12);
+  const exp = parseTokenExp(token);
+  assert.equal(typeof exp, 'number');
+  assert.ok(exp > Date.now());
+});
+
+test('parseTokenExp: token kosong/tanpa titik/payload rusak -> null, tidak throw', () => {
+  assert.equal(parseTokenExp(''), null);
+  assert.equal(parseTokenExp(null), null);
+  assert.equal(parseTokenExp('tanpa-titik'), null);
+  assert.equal(parseTokenExp('payload-rusak.sig'), null);
+});
+
+test('nextRevokedRecord: token baru dicabut -> masuk daftar dengan exp-nya', () => {
+  const now = 1_000_000;
+  const next = nextRevokedRecord({}, 'sig-abc', now + 60_000, now);
+  assert.equal(next['sig-abc'], now + 60_000);
+});
+
+test('nextRevokedRecord: entri lama yang exp aslinya sudah lewat -> dibuang (blob tak membengkak)', () => {
+  const now = 1_000_000;
+  const all = { 'sig-lama': now - 1 }; // exp sudah lewat
+  const next = nextRevokedRecord(all, null, null, now);
+  assert.deepEqual(next, {});
+});
+
+test('nextRevokedRecord: token tanpa exp valid (undefined/sudah kedaluwarsa) -> tidak ditambahkan', () => {
+  const now = 1_000_000;
+  assert.deepEqual(nextRevokedRecord({}, 'sig-x', null, now), {});
+  assert.deepEqual(nextRevokedRecord({}, 'sig-x', now - 1, now), {});
+});
+
+test('isTokenRevoked: signature ada di daftar & belum lewat exp-nya -> true', () => {
+  const now = 1_000_000;
+  const all = { 'sig-abc': now + 60_000 };
+  assert.equal(isTokenRevoked(all, 'sig-abc', now), true);
+});
+
+test('isTokenRevoked: signature tidak ada di daftar -> false', () => {
+  assert.equal(isTokenRevoked({}, 'sig-lain', 1_000_000), false);
+});
+
+test('isTokenRevoked: signature ada tapi exp pencatatan sudah lewat -> false', () => {
+  const now = 1_000_000;
+  const all = { 'sig-abc': now - 1 };
+  assert.equal(isTokenRevoked(all, 'sig-abc', now), false);
+});
+
+test('simulasi: token dicabut saat logout -> requireAuth (via isTokenRevoked) menolak walau signature masih valid', () => {
+  const secret = 'secret-test';
+  const token = signToken(secret, 12);
+  assert.equal(verifyToken(token, secret), true, 'sebelum dicabut, token masih valid secara signature+exp');
+  const [, sig] = token.split('.');
+  const now = Date.now();
+  const revoked = nextRevokedRecord({}, sig, parseTokenExp(token), now);
+  // verifyToken tetap true (signature+exp tak berubah) — isTokenRevoked yang harus menolak.
+  assert.equal(verifyToken(token, secret), true);
+  assert.equal(isTokenRevoked(revoked, sig, now), true, 'token yang sudah dicabut harus ditolak requireAuth');
 });
