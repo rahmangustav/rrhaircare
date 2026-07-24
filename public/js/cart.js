@@ -42,10 +42,10 @@ const Cart = (() => {
           <h4>${esc(i.name)}</h4>
           <div class="ci-price">${rupiah(i.price)}</div>
           <div class="qty">
-            <button data-dec="${i.id}">−</button><span>${i.qty}</span><button data-inc="${i.id}">+</button>
+            <button data-dec="${i.id}" aria-label="Kurangi jumlah ${esc(i.name)}">−</button><span>${i.qty}</span><button data-inc="${i.id}" aria-label="Tambah jumlah ${esc(i.name)}">+</button>
           </div>
         </div>
-        <button class="ci-remove" data-rm="${i.id}"><i class="fa-solid fa-trash-can"></i></button>
+        <button class="ci-remove" data-rm="${i.id}" aria-label="Hapus ${esc(i.name)} dari keranjang"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>
       </div>`;
     }).join('');
     const sub = document.getElementById('cartSubtotal');
