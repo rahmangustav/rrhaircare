@@ -76,3 +76,29 @@ test('host tak dikenal -> nama host apa adanya, dipotong ke 60 karakter', () => 
 test('prefix www. dibuang sebelum pencocokan host', () => {
   assert.equal(classifySource('https://www.tiktok.com/@x', ''), 'TikTok');
 });
+
+test('KEAMANAN: host referrer "__proto__"/"constructor" tidak boleh lolos jadi key -> prototype pollution', () => {
+  // Hasil classifySource() dipakai langsung sebagai key object literal biasa
+  // (a.sources[src] di recordHit, g.sources[src] di recordGoal). ref datang
+  // mentah dari body POST /api/hit /api/goal TANPA auth (lihat hit.js/goal.js),
+  // jadi penyerang bisa kirim referrer URL dengan hostname persis "__proto__"
+  // (host adalah string asli dari URL.hostname, bukan lewat lookup object yang
+  // bisa dicegat pewarisan prototype) untuk mencemari Object.prototype lewat
+  // pola `obj[key] = obj[key] || {...}` diikuti mutasi nested pada key itu.
+  assert.equal(classifySource('http://__proto__/x', ''), 'Lainnya');
+  assert.equal(classifySource('http://constructor/x', ''), 'Lainnya');
+  assert.equal(classifySource('http://prototype/x', ''), 'Lainnya');
+});
+
+test('KEAMANAN: campaign yang bentrok nama properti bawaan Object.prototype tidak bocor', () => {
+  // SOURCE_ALIAS[c] tanpa hasOwnProperty guard akan mewarisi member bawaan
+  // Object.prototype (constructor/toString/dst) untuk c bernilai sama — sebelum
+  // perbaikan ini classifySource('', 'constructor') mengembalikan fungsi Object
+  // bawaan itu sendiri (bukan string), melanggar kontrak fungsi yang selalu
+  // mengembalikan label string untuk panel admin.
+  assert.equal(classifySource('', 'constructor'), 'Constructor');
+  assert.equal(classifySource('', 'tostring'), 'Tostring');
+  // "__proto__" tak berubah oleh kapitalisasi (underscore tak punya huruf besar/kecil),
+  // jadi tetap kena guard UNSAFE_KEYS -> 'Lainnya', bukan objek Object.prototype mentah.
+  assert.equal(classifySource('', '__proto__'), 'Lainnya');
+});

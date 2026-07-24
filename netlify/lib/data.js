@@ -458,16 +458,34 @@ const SOURCE_HOSTS = [
 ];
 const SOURCE_ALIAS = { yt: 'YouTube', youtube: 'YouTube', ig: 'Instagram', instagram: 'Instagram', wa: 'WhatsApp', whatsapp: 'WhatsApp', fb: 'Facebook', facebook: 'Facebook', tiktok: 'TikTok', tt: 'TikTok' };
 
+// Hasil classifySource() dipakai sebagai KEY object literal biasa (a.sources[src],
+// g.sources[src] di bawah, lihat recordHit/recordGoal). "__proto__" adalah nama
+// properti khusus JS (accessor bawaan Object.prototype) — kalau lolos jadi key
+// lewat host referrer, pola `obj[key] = obj[key] || {...}` diikuti mutasi nested
+// pada key itu jadi mencemari Object.prototype (prototype pollution) alih-alih
+// bikin key baru yang aman. ref datang mentah dari body POST /api/hit /api/goal
+// TANPA auth, jadi host ini bisa langsung dikontrol penyerang (referrer palsu
+// dengan hostname "__proto__"/"constructor").
+const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+const safeSourceKey = (name) => (UNSAFE_KEYS.has(name) ? 'Lainnya' : name);
+
 export function classifySource(ref = '', campaign = '', selfHost = '') {
   const c = (campaign || '').toString().trim().toLowerCase().slice(0, 40);
-  if (c) return SOURCE_ALIAS[c] || (c.charAt(0).toUpperCase() + c.slice(1));
+  if (c) {
+    // hasOwnProperty, bukan SOURCE_ALIAS[c] langsung: c bisa berupa nama properti
+    // bawaan Object.prototype (mis. "constructor"/"toString"), yang tanpa guard ini
+    // akan lolos lewat pewarisan prototype dan mengembalikan function/objek bawaan
+    // itu sendiri sebagai "nama sumber" alih-alih string kapital biasa.
+    const alias = Object.prototype.hasOwnProperty.call(SOURCE_ALIAS, c) ? SOURCE_ALIAS[c] : '';
+    return safeSourceKey(alias || (c.charAt(0).toUpperCase() + c.slice(1)));
+  }
   if (!ref) return 'Langsung';
   let host = '';
   try { host = new URL(ref).hostname.toLowerCase().replace(/^www\./, ''); } catch { return 'Langsung'; }
   if (!host) return 'Langsung';
   if (selfHost && (host === selfHost || host.endsWith('.' + selfHost))) return ''; // navigasi internal
   for (const [re, name] of SOURCE_HOSTS) if (re.test(host)) return name;
-  return host.slice(0, 60);
+  return safeSourceKey(host.slice(0, 60));
 }
 
 function todayJakarta() {
