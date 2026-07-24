@@ -1,8 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import '../public/js/booking-time.js';
 
-const { todayWIB, slotStartMinutes, isSlotPast } = globalThis.BookingTime;
+const { todayWIB, slotStartMinutes, isSlotPast, formatBookingDate } = globalThis.BookingTime;
+const bookingTimePath = fileURLToPath(new URL('../public/js/booking-time.js', import.meta.url));
 
 test('todayWIB: tengah malam WIB (00:30) masih tanggal yang sama, bukan mundur ke UTC kemarin', () => {
   // 2026-07-22 00:30 WIB = 2026-07-21 17:30 UTC
@@ -65,4 +68,29 @@ test('isSlotPast: format jam tak dikenali -> tidak pernah dianggap lewat (gagal 
 test('isSlotPast: tanggal kosong -> false', () => {
   const nowMs = Date.parse('2026-07-22T12:00:00.000Z');
   assert.equal(isSlotPast('', '09:00 - 10:00', nowMs), false);
+});
+
+test('formatBookingDate: format tanggal Indonesia lengkap', () => {
+  assert.equal(formatBookingDate('2026-07-25'), 'Sabtu, 25 Juli 2026');
+});
+
+test('formatBookingDate: format tak dikenali -> dikembalikan apa adanya (gagal aman)', () => {
+  assert.equal(formatBookingDate(''), '');
+  assert.equal(formatBookingDate('bukan-tanggal'), 'bukan-tanggal');
+  assert.equal(formatBookingDate(undefined), '');
+});
+
+test('formatBookingDate: hasil TIDAK mundur satu hari untuk timezone di belakang UTC (regresi)', () => {
+  // Reproduksi bug lama: `new Date('2026-07-25')` diparse sebagai tengah malam
+  // UTC, lalu toLocaleDateString() format pakai timezone LOKAL proses. Di
+  // timezone yang di belakang UTC (mis. America/New_York, UTC-4/-5), itu
+  // menghasilkan 'Jumat, 24 Juli 2026' -- mundur satu hari dari yang dipilih
+  // pengunjung di date picker. formatBookingDate() harus tetap benar karena
+  // membangun & memformat Date dari komponen LOKAL saja, tanpa lewat UTC.
+  const out = execFileSync(process.execPath, ['-e', `
+    import('${bookingTimePath.replace(/\\/g, '/')}').then(() => {
+      console.log(globalThis.BookingTime.formatBookingDate('2026-07-25'));
+    });
+  `, '--input-type=module'], { env: { ...process.env, TZ: 'America/New_York' }, encoding: 'utf8' }).trim();
+  assert.equal(out, 'Sabtu, 25 Juli 2026');
 });

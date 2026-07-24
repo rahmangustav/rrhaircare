@@ -1286,8 +1286,7 @@
       return;
     }
 
-    const tgl = new Date(tanggal);
-    const tglFormatted = tgl.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const tglFormatted = BookingTime.formatBookingDate(tanggal);
 
     let pesan = `Halo RR Hair Care 👋\n\nSaya ingin melakukan booking:\n\n`;
     pesan += `👤 *Nama:* ${nama}\n`;
