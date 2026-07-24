@@ -85,6 +85,47 @@ export function verifyToken(token, secret) {
   catch { return false; }
 }
 
+// ── Pencabutan token saat logout ──
+// Token admin (di atas) stateless: begitu ditandatangani, sah sampai `exp`
+// (12 jam) tanpa cara membatalkannya lebih awal — tombol "Keluar" di panel
+// admin cuma menghapus token dari sessionStorage KLIEN. Kalau token sempat
+// bocor sebelum logout (mis. lewat salah satu bug XSS admin.js yang sudah
+// diperbaiki di PR lain, atau komputer bersama yang lupa di-clear), token itu
+// TETAP berlaku sampai 12 jam walau pemiliknya sudah menekan "Keluar" — logout
+// selama ini murni kosmetik di sisi klien. Fungsi di bawah mencabut token
+// spesifik (by signature) di server saat logout, supaya token expired atau
+// dicabut tak lagi lolos requireAuth walau signature-nya masih valid.
+// Logika murni (tanpa Blobs) — dipisah supaya bisa dites langsung.
+export function parseTokenExp(token) {
+  if (!token || !token.includes('.')) return null;
+  const [payload] = token.split('.');
+  try {
+    const exp = JSON.parse(Buffer.from(payload, 'base64url').toString()).exp;
+    return typeof exp === 'number' && exp > 0 ? exp : null;
+  } catch { return null; }
+}
+// Bangun daftar token dicabut berikutnya: buang entri yang exp aslinya sudah
+// lewat (blob tak boleh terus membengkak), lalu tambahkan token baru kalau
+// signature & exp-nya valid dan belum kedaluwarsa (token yang sudah
+// kedaluwarsa sendiri tak perlu dicatat — requireAuth sudah menolaknya).
+export function nextRevokedRecord(all, sig, exp, now) {
+  const next = {};
+  for (const [k, v] of Object.entries(all || {})) if (v > now) next[k] = v;
+  if (sig && exp && exp > now) next[sig] = exp;
+  return next;
+}
+export function isTokenRevoked(all, sig, now) {
+  return Boolean(sig && all && all[sig] && all[sig] > now);
+}
+export async function revokeToken(token) {
+  if (!token || !token.includes('.')) return;
+  const [, sig] = token.split('.');
+  const exp = parseTokenExp(token);
+  const now = Date.now();
+  const all = await readJSON('revokedTokens', {});
+  await writeJSON('revokedTokens', nextRevokedRecord(all, sig, exp, now));
+}
+
 // ── Pengaturan (dibuat otomatis pertama kali) ──
 export async function getSettings() {
   let s = await readJSON('settings', null);
@@ -731,5 +772,8 @@ export const json = (data, status = 200) =>
 export async function requireAuth(req) {
   const token = (req.headers.get('authorization') || '').replace('Bearer ', '');
   const s = await getSettings();
-  return verifyToken(token, s.authSecret) ? s : null;
+  if (!verifyToken(token, s.authSecret)) return null;
+  const revoked = await readJSON('revokedTokens', {});
+  if (isTokenRevoked(revoked, token.split('.')[1], Date.now())) return null;
+  return s;
 }
