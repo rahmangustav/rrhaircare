@@ -648,10 +648,17 @@ export async function importPricelistCsv(text) {
 
 // ── Galeri (foto hasil kerja di landing) ──
 export const getGallery = () => readJSON('gallery', []);
+// Bangun field foto galeri dari body admin. Dipisah dari I/O supaya bisa
+// dites langsung (pola sama dengan buildProductFields/cleanPriceItem) — dan
+// supaya `caption` yang dikirim bukan string (mis. angka lewat panggilan API
+// langsung, bukan form admin resmi) tidak crash TypeError di .slice().
+export function buildGalleryFields(p) {
+  return { image: p.image || '', caption: (p.caption || '').toString().slice(0, 80) };
+}
 export async function addGalleryPhoto(p) {
   const list = await getGallery();
   const item = { id: 'g_' + Date.now().toString(36) + randomBytes(2).toString('hex'),
-    image: p.image || '', caption: (p.caption || '').slice(0, 80), createdAt: Date.now() };
+    ...buildGalleryFields(p), createdAt: Date.now() };
   list.unshift(item); await writeJSON('gallery', list); return item;
 }
 export async function deleteGalleryPhoto(id) {
@@ -664,6 +671,12 @@ export async function deleteGalleryPhoto(id) {
 // ── Foto tetap per bagian halaman (slot bernama, mis. 'about') ──
 // Disimpan sebagai objek { slot: urlMedia }, dipakai untuk foto yang sering diganti.
 export const getSiteImages = () => readJSON('siteImages', {});
+// Bersihkan nama slot dari body admin. Dipisah supaya bisa dites langsung —
+// `key` yang dikirim bukan string (mis. angka lewat panggilan API langsung)
+// sebelumnya crash TypeError di .trim() alih-alih dianggap slot kosong.
+export function sanitizeSiteImageKey(key) {
+  return (key || '').toString().trim();
+}
 export async function setSiteImage(key, url) {
   const m = await getSiteImages();
   const oldUrl = m[key];

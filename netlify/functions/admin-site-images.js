@@ -1,4 +1,4 @@
-import { requireAuth, getSiteImages, setSiteImage, deleteSiteImage, saveMedia, json } from '../lib/data.js';
+import { requireAuth, getSiteImages, setSiteImage, deleteSiteImage, saveMedia, sanitizeSiteImageKey, json } from '../lib/data.js';
 
 // Kelola foto tetap per bagian halaman dari admin (perlu login).
 export default async (req, context) => {
@@ -8,7 +8,7 @@ export default async (req, context) => {
 
   if (req.method === 'POST') {
     const b = await req.json().catch(() => ({}));
-    const key = (b.key || '').trim();
+    const key = sanitizeSiteImageKey(b.key);
     if (!key) return json({ error: 'Slot foto wajib diisi' }, 400);
     let image = b.image || '';
     if (b.imageData) {
