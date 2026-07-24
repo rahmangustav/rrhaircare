@@ -385,11 +385,32 @@ async function applyStockTransition(before, next) {
   }
 }
 
+// Ambil kandidat pertama dari candidateFn yang belum ada di `existing` —
+// dipisah murni (tanpa I/O) supaya bisa dites langsung tanpa mock crypto/waktu.
+export function uniqueWithRetry(candidateFn, existing) {
+  const used = new Set(existing);
+  let v = candidateFn();
+  while (used.has(v)) v = candidateFn();
+  return v;
+}
+// order.id dulu cuma 'o_' + Date.now().toString(36) tanpa garam acak — beda
+// dari addProduct/addGalleryPhoto/newPriceId yang semuanya menambah randomBytes
+// justru untuk cegah tabrakan. Dua POST /api/orders yang diproses pada
+// milidetik yang sama bisa dapat id kembar, dan updateOrder/updateOrderByCode
+// pakai findIndex (ambil kecocokan PERTAMA) -> admin bisa ubah status pesanan
+// yang salah tanpa ada indikasi error.
+export function generateOrderId(existingIds = []) {
+  return uniqueWithRetry(() => 'o_' + Date.now().toString(36) + randomBytes(2).toString('hex'), existingIds);
+}
+export function generateOrderCode(existingCodes = []) {
+  return uniqueWithRetry(() => 'RR' + new Date().toISOString().slice(2, 10).replace(/-/g, '') +
+    '-' + randomBytes(2).toString('hex').toUpperCase(), existingCodes);
+}
 export async function addOrder(o) {
   const list = await getOrders();
-  const code = 'RR' + new Date().toISOString().slice(2, 10).replace(/-/g, '') +
-    '-' + randomBytes(2).toString('hex').toUpperCase();
-  const order = { id: 'o_' + Date.now().toString(36), code, ...o,
+  const id = generateOrderId(list.map(x => x.id));
+  const code = generateOrderCode(list.map(x => x.code));
+  const order = { id, code, ...o,
     status: 'menunggu_pembayaran', stockReturned: false, createdAt: Date.now() };
   list.unshift(order); await writeJSON('orders', list); return order;
 }
