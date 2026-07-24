@@ -25,5 +25,23 @@ function isSlotPast(tanggal, jamRange, nowMs) {
   return nowMin >= startMin;
 }
 
+// Format 'YYYY-MM-DD' (nilai mentah <input type="date">) jadi teks tanggal
+// panjang Indonesia untuk pesan WhatsApp booking. TIDAK boleh lewat
+// `new Date(tanggalStr)` lalu format langsung — 'YYYY-MM-DD' diparse sebagai
+// tengah malam UTC, lalu toLocaleDateString() memformatnya pakai timezone
+// LOKAL perangkat pengunjung. Untuk pengunjung yang timezone-nya di belakang
+// UTC (mis. diaspora WNI membuka situs dari Amerika), hasilnya mundur satu
+// hari dari tanggal yang sebenarnya dipilih di date picker — pesan yang
+// dikirim ke salon jadi salah tanggal. Membangun Date dari komponen
+// tahun/bulan/tanggal lokal (bukan dari string) membuat konstruksi & format
+// sama-sama "lokal" tanpa perjalanan lewat UTC di tengah, jadi hasilnya benar
+// di timezone manapun.
+function formatBookingDate(tanggal) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(tanggal || '');
+  if (!m) return tanggal || '';
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  return d.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+}
+
 (typeof window !== 'undefined' ? window : globalThis).BookingTime =
-  { todayWIB, slotStartMinutes, isSlotPast };
+  { todayWIB, slotStartMinutes, isSlotPast, formatBookingDate };
