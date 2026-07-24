@@ -393,23 +393,54 @@ export async function addOrder(o) {
     status: 'menunggu_pembayaran', stockReturned: false, createdAt: Date.now() };
   list.unshift(order); await writeJSON('orders', list); return order;
 }
+
+// Terapkan patch pada order pertama yang cocok predicate, di snapshot list yang
+// diberikan. Dipisah dari I/O Blobs supaya bisa dites sebagai fungsi murni.
+// Tidak menemukan order -> list dikembalikan apa adanya, order null.
+export function applyOrderPatch(list, predicate, patch) {
+  const i = list.findIndex(predicate);
+  if (i < 0) return { list, order: null };
+  const nextList = list.slice();
+  nextList[i] = { ...list[i], ...patch };
+  return { list: nextList, order: nextList[i] };
+}
+
+// updateOrder/updateOrderByCode dulu membaca daftar order SEKALI di awal,
+// lalu (untuk order yang berpindah dari/ke status "batal") menunggu I/O stok
+// (restoreStockFor/deductStockFor: baca+tulis blob produk) sebelum akhirnya
+// menulis balik SELURUH snapshot order yang dibaca di awal tadi. Kalau order
+// lain (baru masuk lewat addOrder, atau diubah admin/pembeli lain lewat
+// updateOrder/updateOrderByCode) ditulis persis di jendela waktu I/O stok itu,
+// tulisan snapshot lama di sini menimpa balik perubahan itu dan order tersebut
+// hilang tanpa jejak dari blob `orders` -- Netlify Blobs tidak menyediakan
+// conditional write (compare-and-swap) di versi SDK ini untuk mencegahnya
+// sepenuhnya, jadi baca ulang list TEPAT sebelum menulis (setelah I/O stok
+// selesai) dan terapkan patch pada snapshot TERBARU itu -- mempersempit
+// jendela race ke sekitar satu round-trip Blobs, mengikuti pola yang sama
+// dengan reserveStockFor di atas untuk race stok.
 export async function updateOrder(id, patch) {
-  const list = await getOrders();
-  const i = list.findIndex(o => o.id === id);
-  if (i < 0) return null;
-  const next = { ...list[i], ...patch };
-  await applyStockTransition(list[i], next);
-  list[i] = next;
-  await writeJSON('orders', list); return list[i];
+  const before = (await getOrders()).find(o => o.id === id);
+  if (!before) return null;
+  const next = { ...before, ...patch };
+  await applyStockTransition(before, next);
+  const fresh = await getOrders();
+  const { list: nextList, order } =
+    applyOrderPatch(fresh, o => o.id === id, { ...patch, stockReturned: next.stockReturned });
+  if (!order) return null;
+  await writeJSON('orders', nextList);
+  return order;
 }
 export async function updateOrderByCode(code, patch) {
-  const list = await getOrders();
-  const i = list.findIndex(o => o.code === code);
-  if (i < 0) return null;
-  const next = { ...list[i], ...patch };
-  await applyStockTransition(list[i], next);
-  list[i] = next;
-  await writeJSON('orders', list); return list[i];
+  const before = (await getOrders()).find(o => o.code === code);
+  if (!before) return null;
+  const next = { ...before, ...patch };
+  await applyStockTransition(before, next);
+  const fresh = await getOrders();
+  const { list: nextList, order } =
+    applyOrderPatch(fresh, o => o.code === code, { ...patch, stockReturned: next.stockReturned });
+  if (!order) return null;
+  await writeJSON('orders', nextList);
+  return order;
 }
 
 // Batalkan otomatis order yang telat bayar & kembalikan stoknya.
