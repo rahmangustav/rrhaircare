@@ -1,5 +1,6 @@
 import { getProducts, getSettings, addOrder, expireStaleOrders,
-  orderRateStatus, noteOrderCreated, reserveStockFor, resolveShipping, sanitizeCustomer, json } from '../lib/data.js';
+  orderRateStatus, noteOrderCreated, reserveStockFor, resolveShipping, sanitizeCustomer,
+  normalizeQty, json } from '../lib/data.js';
 
 export default async (req, context) => {
   if (req.method !== 'POST') return json({ error: 'Method tidak didukung' }, 405);
@@ -28,7 +29,7 @@ export default async (req, context) => {
   for (const it of items) {
     const p = products.find(x => x.id === it.id);
     if (!p) return json({ error: 'Produk tidak ditemukan' }, 400);
-    const qty = Math.max(1, Number(it.qty) || 1);
+    const qty = normalizeQty(it.qty);
     if (p.stock < qty) return json({ error: `Stok "${p.name}" tidak cukup (sisa ${p.stock})` }, 400);
     subtotal += p.price * qty;
     orderItems.push({ id: p.id, name: p.name, price: p.price, qty });

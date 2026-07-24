@@ -360,6 +360,15 @@ export function applyStockReservation(products, items) {
 export function resolveShipping(shippingOptions, shippingId) {
   return (shippingOptions || []).find(s => s.id === shippingId) || null;
 }
+// Paksa qty item pesanan jadi bilangan bulat >= 1. UI keranjang (cart.js) hanya
+// pernah mengirim integer lewat tombol +/-, tapi /api/orders bisa dipanggil
+// langsung (curl/devtools) dengan qty apa saja — sebelum fungsi ini, qty
+// pecahan (mis. 2.7) lolos apa adanya dan mengurangi stok produk fisik jadi
+// pecahan permanen di blob `products` (mis. stok "4.3"), padahal produk toko
+// (sampo, alat salon, dst) hanya bisa dijual per unit utuh.
+export function normalizeQty(raw) {
+  return Math.max(1, Math.round(Number(raw)) || 1);
+}
 // Kurangi stok order baru dengan membaca ulang produk TERKINI tepat sebelum
 // menulis — mempersempit jendela race antara pengecekan awal di orders.js dan
 // penulisan akhir, supaya dua order yang datang nyaris bersamaan untuk unit
