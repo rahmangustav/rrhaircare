@@ -688,6 +688,26 @@ export const MAX_MEDIA_BYTES = 4 * 1024 * 1024; // batas ~4 MB per gambar
 // sebagai halaman situs sendiri — bisa mencuri token admin dari sessionStorage.
 // order-proof.js (upload bukti bayar) TANPA login, jadi ini jalur publik.
 const ALLOWED_MEDIA_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+// Tanda tangan byte awal tiap format — data URL cuma MENGAKU bertipe X lewat
+// header "data:image/jpeg;base64,...", isi bytenya bisa apa saja. Tanpa cek
+// ini, siapa pun (order-proof.js publik TANPA login) bisa unggah file apa
+// saja mengaku "image/jpeg" dan tersimpan+tersaji balik lewat /api/media/:key
+// dengan content-type itu — celah spoofing tipe file, bukan sekadar validasi
+// kosmetik. Fungsi murni supaya bisa dites tanpa Blobs.
+const MEDIA_MAGIC_BYTES = {
+  'image/jpeg': [[0xff, 0xd8, 0xff]],
+  'image/png': [[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]],
+  'image/gif': [[0x47, 0x49, 0x46, 0x38, 0x37, 0x61], [0x47, 0x49, 0x46, 0x38, 0x39, 0x61]],
+  // WEBP: "RIFF" (4 byte) + ukuran (4 byte, diabaikan) + "WEBP" (byte 8-11)
+  'image/webp': [[0x52, 0x49, 0x46, 0x46, null, null, null, null, 0x57, 0x45, 0x42, 0x50]],
+};
+export function bufferMatchesImageType(buf, contentType) {
+  const sigs = MEDIA_MAGIC_BYTES[contentType];
+  if (!sigs || !buf || buf.length === 0) return false;
+  return sigs.some(sig =>
+    sig.length <= buf.length && sig.every((b, i) => b === null || buf[i] === b)
+  );
+}
 export async function saveMedia(dataUrl) {
   const m = /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/s.exec(dataUrl || '');
   if (!m) return '';
@@ -697,6 +717,7 @@ export async function saveMedia(dataUrl) {
   if (buf.length > MAX_MEDIA_BYTES) {
     const e = new Error('MEDIA_TOO_LARGE'); e.code = 'MEDIA_TOO_LARGE'; throw e;
   }
+  if (!bufferMatchesImageType(buf, contentType)) return '';
   const ext = contentType.split('/')[1].replace('jpeg', 'jpg').replace('+xml', '');
   const key = Date.now().toString(36) + randomBytes(3).toString('hex') + '.' + ext;
   await media().set(key, buf, { metadata: { contentType } });
