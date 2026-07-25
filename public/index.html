@@ -1229,7 +1229,26 @@
 </div>
 
 <script src="/js/booking-time.js"></script>
+<script src="/js/wa-contact.js"></script>
 <script>
+  // Nomor WA fallback (dipakai kalau /api/settings gagal/lambat dimuat) —
+  // sama seperti yang sebelumnya tercetak tetap di semua tautan wa.me di halaman
+  // ini. Begitu settings termuat, semua tautan wa.me & tombol booking dialihkan
+  // ke nomor yang sesungguhnya diatur admin (checkout.html & admin.js sudah
+  // begitu; landing page ini sebelumnya tidak ikut, jadi kalau nomor WA salon
+  // diganti dari panel admin, tombol di halaman utama tetap ke nomor lama).
+  const WA_FALLBACK = '6281386291552';
+  let waNumber = WA_FALLBACK;
+  (async function syncWaNumber() {
+    try {
+      const s = await (await fetch('/api/settings')).json();
+      waNumber = WaContact.normalize(s.whatsapp, WA_FALLBACK);
+      document.querySelectorAll(`a[href^="https://wa.me/${WA_FALLBACK}"]`).forEach(a => {
+        a.href = a.href.replace(WA_FALLBACK, waNumber);
+      });
+    } catch (e) { /* offline/API gagal -> tetap pakai nomor default di HTML */ }
+  })();
+
   // Navbar scroll
   window.addEventListener('scroll', () => {
     document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 40);
@@ -1299,7 +1318,7 @@
     if (catatan) pesan += `📝 *Catatan:* ${catatan}\n`;
     pesan += `\nMohon konfirmasi ketersediaan jadwalnya. Terima kasih! 🌸`;
 
-    const url = `https://wa.me/6281386291552?text=${encodeURIComponent(pesan)}`;
+    const url = WaContact.buildUrl(waNumber, pesan);
     if (window.catatBooking) window.catatBooking(); // form lengkap = niat tertinggi
     window.open(url, '_blank');
     showToast('✅ Membuka WhatsApp...');
