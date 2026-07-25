@@ -9,7 +9,10 @@
     if (!Array.isArray(list) || !list.length) return; // pertahankan placeholder
     grid.innerHTML = list.map(function (g) {
       var cap = g.caption ? '<span>' + esc(g.caption) + '</span>' : '<span>Lihat</span>';
-      return '<div class="gallery-item">' +
+      // tabindex+role: div biasa tidak bisa difokus keyboard, padahal klik-nya
+      // membuka lightbox — tanpa ini pengguna keyboard tak pernah bisa melihat fotonya.
+      return '<div class="gallery-item" tabindex="0" role="button" aria-label="Lihat foto: ' +
+        esc(g.caption || 'hasil kerja RR Hair Care') + '">' +
         '<img src="' + esc(g.image) + '" alt="' + esc(g.caption || 'Hasil kerja RR Hair Care') + '" loading="lazy"/>' +
         '<div class="gallery-overlay">' + cap + '</div></div>';
     }).join('');
@@ -20,7 +23,12 @@
     if (!imgs || typeof imgs !== 'object') return;
     document.querySelectorAll('[data-slot]').forEach(function (el) {
       var url = imgs[el.getAttribute('data-slot')];
-      if (url) el.innerHTML = '<img src="' + esc(url) + '" alt="RR Hair Care" loading="lazy"/>';
+      if (!url) return;
+      el.innerHTML = '<img src="' + esc(url) + '" alt="RR Hair Care" loading="lazy"/>';
+      // Sama seperti item galeri: baru bisa difokus keyboard setelah foto asli terpasang.
+      el.setAttribute('tabindex', '0');
+      el.setAttribute('role', 'button');
+      el.setAttribute('aria-label', 'Lihat foto RR Hair Care');
     });
   }).catch(function () {});
 })();
