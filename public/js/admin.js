@@ -53,8 +53,10 @@ document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () =>
 }));
 
 // ── Produk ──
+let PRODUCTS = [];
 async function loadProducts(){
   const list = await api('/api/admin/products');
+  PRODUCTS = list;
   const body = document.getElementById('prodBody');
   if (!list.length){ body.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:30px">Belum ada produk. Klik “Tambah Produk”.</td></tr>'; return; }
   body.innerHTML = list.map(p => {
@@ -67,7 +69,7 @@ async function loadProducts(){
       <td>${p.stock}</td>
       <td>${p.active!==false?'<span class="badge b-kirim">Tampil</span>':'<span class="badge b-selesai">Hidden</span>'}</td>
       <td style="white-space:nowrap">
-        <button class="icon-btn" onclick='editProduct(${JSON.stringify(p)})'><i class="fa-solid fa-pen"></i></button>
+        <button class="icon-btn" onclick="editProduct('${esc(p.id)}')"><i class="fa-solid fa-pen"></i></button>
         <button class="icon-btn danger" onclick="delProduct('${p.id}','${esc(p.name)}')"><i class="fa-solid fa-trash-can"></i></button>
       </td></tr>`;
   }).join('');
@@ -79,7 +81,9 @@ function openProduct(){
   document.getElementById('pImg').value=''; document.getElementById('pImgPreview').innerHTML='';
   document.getElementById('prodModal').classList.add('show');
 }
-function editProduct(p){
+function editProduct(id){
+  const p = PRODUCTS.find(x=>x.id===id);
+  if (!p){ toast('Produk tidak ditemukan'); return; }
   document.getElementById('modalTitle').textContent='Edit Produk';
   document.getElementById('pId').value=p.id;
   document.getElementById('pName').value=p.name;
@@ -351,9 +355,11 @@ document.getElementById('gImg')?.addEventListener('change', async function(){
 });
 
 // ── Daftar Harga ──
+let PRICELIST = [];
 async function loadPricelist(){
   let list;
   try { list = await api('/api/admin/pricelist'); } catch(e){ return; }
+  PRICELIST = list;
   document.getElementById('priceCount').textContent = list.length ? `${list.length} layanan` : '';
   const body = document.getElementById('priceBody');
   if (!list.length){ body.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:26px">Belum ada harga. Import CSV atau klik “Tambah Layanan”.</td></tr>'; return; }
@@ -364,7 +370,7 @@ async function loadPricelist(){
     <td>${h.promo?`<span style="color:#b0603f">${rupiah(h.promo)}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
     <td style="color:var(--muted);font-size:.82rem">${esc(h.duration||'')}</td>
     <td style="white-space:nowrap">
-      <button class="icon-btn" onclick='editPrice(${JSON.stringify(h)})'><i class="fa-solid fa-pen"></i></button>
+      <button class="icon-btn" onclick="editPrice('${esc(h.id)}')"><i class="fa-solid fa-pen"></i></button>
       <button class="icon-btn danger" onclick="delPrice('${h.id}','${esc(h.name)}')"><i class="fa-solid fa-trash-can"></i></button>
     </td></tr>`).join('');
 }
@@ -373,7 +379,9 @@ function openPrice(){
   ['hId','hName','hCat','hPrice','hPromo','hDur'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('priceModal').classList.add('show');
 }
-function editPrice(h){
+function editPrice(id){
+  const h = PRICELIST.find(x=>x.id===id);
+  if (!h){ toast('Layanan tidak ditemukan'); return; }
   document.getElementById('priceModalTitle').textContent='Edit Layanan';
   document.getElementById('hId').value=h.id;
   document.getElementById('hName').value=h.name||'';
