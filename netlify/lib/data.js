@@ -315,16 +315,20 @@ async function restoreStockFor(items) {
   }
   if (touched) await saveProducts(products);
 }
-// Potong ulang stok (dipakai kalau order batal diaktifkan lagi oleh admin).
+// Potong ulang stok (dipakai kalau order 'batal' diaktifkan lagi oleh admin).
+// Memakai pengecekan yang sama dengan order baru (applyStockReservation) —
+// dulu fungsi ini langsung Math.max(0, stok-qty) tanpa cek kecukupan, jadi
+// order lain yang sudah "mengambil" unit yang sama (setelah stok dikembalikan
+// oleh auto-cancel) tetap bisa diam-diam ikut disahkan -> oversell barang
+// fisik yang sama ke dua pelanggan. Sekarang: kalau stok tak cukup, TIDAK ada
+// yang diubah dan daftar id yang kurang dikembalikan (kosong = berhasil).
 async function deductStockFor(items) {
-  if (!Array.isArray(items) || !items.length) return;
+  if (!Array.isArray(items) || !items.length) return [];
   const products = await getProducts();
-  let touched = false;
-  for (const it of items) {
-    const p = products.find(x => x.id === it.id);
-    if (p) { p.stock = Math.max(0, (Number(p.stock) || 0) - (Number(it.qty) || 0)); touched = true; }
-  }
-  if (touched) await saveProducts(products);
+  const short = applyStockReservation(products, items);
+  if (short.length) return short;
+  await saveProducts(products);
+  return [];
 }
 // Cek stok tiap item terhadap snapshot produk yang diberikan, lalu kurangi
 // langsung di snapshot itu kalau semuanya cukup. Dipisah dari I/O Blobs supaya
@@ -373,6 +377,10 @@ export async function reserveStockFor(items) {
   return [];
 }
 // Sesuaikan stok mengikuti perpindahan status; menandai `next.stockReturned`.
+// Mengembalikan daftar id produk yang stoknya tak cukup kalau order 'batal'
+// diaktifkan lagi (kosong = berhasil / tidak ada penyesuaian stok yang perlu).
+// `next` TIDAK diubah kalau gagal, supaya pemanggil bisa menolak transisi ini
+// tanpa order jadi setengah-berubah.
 async function applyStockTransition(before, next) {
   const wasCanceled = before.status === 'batal';
   const nowCanceled = next.status === 'batal';
@@ -380,9 +388,11 @@ async function applyStockTransition(before, next) {
     await restoreStockFor(before.items);
     next.stockReturned = true;
   } else if (wasCanceled && !nowCanceled && before.stockReturned) {
-    await deductStockFor(before.items);
+    const short = await deductStockFor(before.items);
+    if (short.length) return short;
     next.stockReturned = false;
   }
+  return [];
 }
 
 export async function addOrder(o) {
@@ -393,12 +403,20 @@ export async function addOrder(o) {
     status: 'menunggu_pembayaran', stockReturned: false, createdAt: Date.now() };
   list.unshift(order); await writeJSON('orders', list); return order;
 }
+// Dilempar oleh updateOrder/updateOrderByCode kalau mengaktifkan-ulang order
+// 'batal' butuh stok yang sudah tidak cukup (unit yang sama sudah diambil
+// order lain sejak stok dikembalikan) — pemanggil (mis. admin-orders.js)
+// menerjemahkannya jadi respons error, bukan diam-diam menyahkan order.
+export class StockShortError extends Error {
+  constructor(shortIds) { super('STOCK_SHORT'); this.code = 'STOCK_SHORT'; this.shortIds = shortIds; }
+}
 export async function updateOrder(id, patch) {
   const list = await getOrders();
   const i = list.findIndex(o => o.id === id);
   if (i < 0) return null;
   const next = { ...list[i], ...patch };
-  await applyStockTransition(list[i], next);
+  const short = await applyStockTransition(list[i], next);
+  if (short.length) throw new StockShortError(short);
   list[i] = next;
   await writeJSON('orders', list); return list[i];
 }
@@ -407,7 +425,8 @@ export async function updateOrderByCode(code, patch) {
   const i = list.findIndex(o => o.code === code);
   if (i < 0) return null;
   const next = { ...list[i], ...patch };
-  await applyStockTransition(list[i], next);
+  const short = await applyStockTransition(list[i], next);
+  if (short.length) throw new StockShortError(short);
   list[i] = next;
   await writeJSON('orders', list); return list[i];
 }
