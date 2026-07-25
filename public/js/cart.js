@@ -1,7 +1,20 @@
 // Keranjang belanja — disimpan di localStorage, dipakai bersama semua halaman.
 const Cart = (() => {
   const KEY = 'rrhc_cart';
-  let items = JSON.parse(localStorage.getItem(KEY) || '[]');
+  // localStorage['rrhc_cart'] bisa berisi data rusak (sisa versi lama, diedit
+  // manual lewat devtools, ekstensi browser lain menimpa key yang sama) atau
+  // JSON valid tapi bukan array. cart.js dimuat sebagai <script> biasa (bukan
+  // module) di checkout.html & toko/index.html — kalau baris ini throw tanpa
+  // guard, SELURUH file gagal dieksekusi (termasuk toast()/drawer di bawah),
+  // jadi `Cart` tak pernah terbentuk dan alur belanja/checkout rusak total
+  // sampai localStorage dibersihkan manual.
+  let items;
+  try {
+    const parsed = JSON.parse(localStorage.getItem(KEY) || '[]');
+    items = Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    items = [];
+  }
   const save = () => { localStorage.setItem(KEY, JSON.stringify(items)); render(); };
   const rupiah = n => 'Rp' + (Number(n)||0).toLocaleString('id-ID');
 
