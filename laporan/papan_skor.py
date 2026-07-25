@@ -244,12 +244,25 @@ def cetak(s: dict) -> None:
         yt_n, ig_n = t["sumber"].get("YouTube", 0), t["sumber"].get("Instagram", 0)
         print(f"  YouTube   : {yt_n} pengunjung dari {y['subscriber']} subscriber")
         print(f"  Instagram : {ig_n} pengunjung dari {i['follower']} follower")
-        if ig_n and yt_n:
-            print(f"  → YouTube mengirim {yt_n / ig_n:.1f}× lebih banyak, "
-                  f"padahal pengikutnya {i['follower'] / y['subscriber']:.1f}× lebih sedikit")
+        baris = rasio_silang(yt_n, ig_n, i["follower"], y["subscriber"])
+        if baris:
+            print(baris)
         print("  Catatan: kunjungan dari Instagram masih masuk 'Langsung' selama link")
         print("  bio belum diberi ?src=ig — angka Instagram di atas kemungkinan besar")
         print("  TERLALU RENDAH, jangan dipakai menghakimi Instagram.")
+
+
+def rasio_silang(yt_n: int, ig_n: int, follower, subscriber):
+    """Baris "YouTube mengirim ...x lebih banyak..." di perbandingan silang.
+
+    None kalau salah satu rasio tak bisa dihitung — termasuk subscriber
+    YouTube 0 (channel baru yang videonya sudah dapat trafik pencarian
+    sebelum ada yang subscribe), bukan cuma ig_n/yt_n kosong.
+    """
+    if not (ig_n and yt_n and subscriber):
+        return None
+    return (f"  → YouTube mengirim {yt_n / ig_n:.1f}× lebih banyak, "
+            f"padahal pengikutnya {follower / subscriber:.1f}× lebih sedikit")
 
 
 def banding(baru: dict, lama: dict) -> None:
