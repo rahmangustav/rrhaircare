@@ -219,7 +219,22 @@ def main():
     print(f"    {(juara['judul'] or '(tanpa caption)')[:64]}")
     lain = [m['reach'] for m in matang if m is not juara]
     if lain:
-        print(f"    = {juara['reach'] / st.median(lain):.1f}x jangkauan median post lainnya")
+        baris = rasio_pemenang(juara['reach'], lain)
+        if baris:
+            print(baris)
+
+
+def rasio_pemenang(juara_reach, lain):
+    """Baris "= ...x jangkauan median post lainnya" di bagian PEMENANG.
+
+    None kalau median tak bisa dipakai jadi pembagi -- termasuk saat semua
+    post pembanding kebetulan berjangkauan 0 (post baru yang reach-nya belum
+    terekam API), bukan cuma daftar `lain` kosong yang sudah dijaga pemanggil.
+    """
+    m = st.median(lain)
+    if not m:
+        return None
+    return f"    = {juara_reach / m:.1f}x jangkauan median post lainnya"
 
 
 if __name__ == '__main__':
