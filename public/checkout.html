@@ -93,17 +93,26 @@
 <div class="toast" id="toast"></div>
 <script src="/js/img.js"></script>
 <script src="/js/cart.js"></script>
+<script src="/js/checkout-pending.js"></script>
 <script>
 const rupiah = n => 'Rp' + (Number(n)||0).toLocaleString('id-ID');
 const esc = s => String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let settings = {}, chosenShip = null, order = null;
+const pendingOrder = CheckoutPending.loadPendingOrder();
 
-if (!Cart.all().length) location.href = '/toko';
+// Kalau ada pesanan pending (dipulihkan dari sessionStorage setelah reload di step 2),
+// jangan usir ke /toko cuma karena keranjang sudah kosong.
+if (!pendingOrder && !Cart.all().length) location.href = '/toko';
 
 (async function init(){
   settings = await (await fetch('/api/settings')).json();
-  renderSummary();
-  renderShip();
+  if (pendingOrder) {
+    order = pendingOrder;
+    showPayment();
+  } else {
+    renderSummary();
+    renderShip();
+  }
 })();
 
 function renderSummary(){
@@ -148,6 +157,7 @@ document.getElementById('toPayBtn').addEventListener('click', async () => {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error||'Gagal');
     order = data;
+    CheckoutPending.savePendingOrder(order);
     showPayment();
   } catch(e){ toast(e.message); btn.disabled=false; btn.textContent='Buat Pesanan & Bayar'; }
 });
@@ -179,6 +189,7 @@ document.getElementById('uploadBtn').addEventListener('click', async () => {
       headers:{'Content-Type':'application/json'}, body: JSON.stringify({ proof }) });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error||'Gagal');
+    CheckoutPending.clearPendingOrder();
     document.getElementById('step2').classList.remove('active');
     document.getElementById('step3').classList.add('active');
     document.getElementById('doneCode').textContent = order.code;
