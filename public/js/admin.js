@@ -107,8 +107,8 @@ async function saveProduct(){
     active: document.getElementById('pActive').checked
   };
   const f = document.getElementById('pImg').files[0];
-  if (f) body.imageData = await fileToDataURL(f);
   try {
+    if (f) body.imageData = await fileToDataURL(f);
     await api(id? `/api/admin/products/${id}` : '/api/admin/products', { method: id?'PUT':'POST', body });
     toast(id?'Produk diperbarui':'Produk ditambahkan'); closeProduct(); loadProducts();
   } catch(e){ toast(e.message); }
@@ -293,8 +293,8 @@ async function loadGallery(){
 async function addGalleryPhoto(){
   const f = document.getElementById('gImg').files[0];
   if (!f){ toast('Pilih foto dulu'); return; }
-  const body = { caption: document.getElementById('gCaption').value.trim(), imageData: await fileToDataURL(f) };
   try {
+    const body = { caption: document.getElementById('gCaption').value.trim(), imageData: await fileToDataURL(f) };
     await api('/api/admin/gallery',{ method:'POST', body });
     toast('Foto ditambahkan ke galeri');
     document.getElementById('gImg').value=''; document.getElementById('gCaption').value='';
@@ -346,8 +346,11 @@ async function delSiteImage(key){
 // Pratinjau foto saat dipilih
 document.getElementById('gImg')?.addEventListener('change', async function(){
   const f = this.files[0];
-  document.getElementById('gImgPreview').innerHTML = f
-    ? `<img src="${await fileToDataURL(f)}" style="max-width:140px;border-radius:10px;border:1px solid var(--line)"/>` : '';
+  const box = document.getElementById('gImgPreview');
+  if (!f) { box.innerHTML = ''; return; }
+  try {
+    box.innerHTML = `<img src="${await fileToDataURL(f)}" style="max-width:140px;border-radius:10px;border:1px solid var(--line)"/>`;
+  } catch (e) { box.innerHTML = ''; toast(e.message); this.value = ''; }
 });
 
 // ── Daftar Harga ──
@@ -449,8 +452,10 @@ async function saveInfo(){
     bankInfo: document.getElementById('setBank').value.trim()
   };
   const q = document.getElementById('setQris').files[0];
-  if (q) body.qrisData = await fileToDataURL(q);
-  try { await api('/api/admin/settings',{method:'PUT',body}); toast('Info toko disimpan'); loadSettings(); } catch(e){ toast(e.message); }
+  try {
+    if (q) body.qrisData = await fileToDataURL(q);
+    await api('/api/admin/settings',{method:'PUT',body}); toast('Info toko disimpan'); loadSettings();
+  } catch(e){ toast(e.message); }
 }
 async function changePw(){
   const np = document.getElementById('newPw').value;

@@ -17,10 +17,10 @@ function fileToDataURL(file, maxSize = 1200, quality = 0.82) {
         canvas.getContext('2d').drawImage(img, 0, 0, width, height);
         resolve(canvas.toDataURL('image/jpeg', quality));
       };
-      img.onerror = reject;
+      img.onerror = () => reject(new Error('File bukan gambar yang valid atau rusak'));
       img.src = reader.result;
     };
-    reader.onerror = reject;
+    reader.onerror = () => reject(new Error('Gagal membaca file dari perangkat'));
     reader.readAsDataURL(file);
   });
 }
