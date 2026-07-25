@@ -6,8 +6,9 @@
   var imgEl = document.getElementById('lightboxImg');
   var capEl = document.getElementById('lightboxCaption');
   var closeBtn = document.getElementById('lightboxClose');
+  var lastTrigger = null; // elemen yang membuka lightbox, buat kembalikan fokus saat tutup
 
-  function open(src, caption) {
+  function open(src, caption, trigger) {
     imgEl.src = src;
     imgEl.alt = caption || '';
     capEl.textContent = caption || '';
@@ -15,12 +16,31 @@
     box.classList.add('open');
     box.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
+    lastTrigger = trigger || null;
+    closeBtn.focus(); // pindahkan fokus ke dalam dialog untuk pengguna keyboard/pembaca layar
   }
   function close() {
     box.classList.remove('open');
     box.setAttribute('aria-hidden', 'true');
     document.body.style.overflow = '';
     imgEl.src = '';
+    if (lastTrigger && document.contains(lastTrigger)) lastTrigger.focus(); // kembalikan fokus ke pemicu
+    lastTrigger = null;
+  }
+
+  // Ambil <img> + keterangan dari kontainer galeri/foto lalu buka lightbox-nya.
+  // Dipakai bersama oleh klik mouse dan aktivasi keyboard (Enter/Space).
+  function activate(container) {
+    var img = container.querySelector('img');
+    if (!img) return false; // masih placeholder, belum ada foto
+    var cap = '';
+    if (container.classList.contains('gallery-item')) {
+      var span = container.querySelector('.gallery-overlay span');
+      if (span && span.textContent && span.textContent.trim() !== 'Lihat') cap = span.textContent.trim();
+    }
+    if (!cap && img.alt && img.alt !== 'RR Hair Care') cap = img.alt;
+    open(img.src, cap, container);
+    return true;
   }
 
   // Delegasi klik: klik kontainer galeri/foto (overlay galeri menutupi <img>,
@@ -28,20 +48,20 @@
   document.addEventListener('click', function (e) {
     var container = e.target.closest && e.target.closest('.gallery-item, .about-img-wrapper');
     if (!container) return;
-    var img = container.querySelector('img');
-    if (!img) return; // masih placeholder, belum ada foto
+    if (activate(container)) e.preventDefault();
+  });
+
+  // Aktivasi via keyboard: hanya kontainer yang benar-benar bisa difokus
+  // (tabindex disetel oleh gallery.js begitu foto asli terpasang) yang merespons.
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { close(); return; }
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    var container = e.target.closest && e.target.closest('.gallery-item, .about-img-wrapper');
+    if (!container || container.getAttribute('tabindex') === null) return;
     e.preventDefault();
-    // Ambil keterangan dari overlay galeri kalau ada, kalau tidak dari alt
-    var cap = '';
-    if (container.classList.contains('gallery-item')) {
-      var span = container.querySelector('.gallery-overlay span');
-      if (span && span.textContent && span.textContent.trim() !== 'Lihat') cap = span.textContent.trim();
-    }
-    if (!cap && img.alt && img.alt !== 'RR Hair Care') cap = img.alt;
-    open(img.src, cap);
+    activate(container);
   });
 
   closeBtn.addEventListener('click', close);
   box.addEventListener('click', function (e) { if (e.target === box) close(); }); // klik latar
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
 })();
