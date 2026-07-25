@@ -68,7 +68,7 @@ async function loadProducts(){
       <td>${p.active!==false?'<span class="badge b-kirim">Tampil</span>':'<span class="badge b-selesai">Hidden</span>'}</td>
       <td style="white-space:nowrap">
         <button class="icon-btn" onclick='editProduct(${JSON.stringify(p)})'><i class="fa-solid fa-pen"></i></button>
-        <button class="icon-btn danger" onclick="delProduct('${p.id}','${esc(p.name)}')"><i class="fa-solid fa-trash-can"></i></button>
+        <button class="icon-btn danger" data-id="${esc(p.id)}" data-name="${esc(p.name)}" onclick="delProduct(this.dataset.id,this.dataset.name)"><i class="fa-solid fa-trash-can"></i></button>
       </td></tr>`;
   }).join('');
 }
@@ -365,7 +365,7 @@ async function loadPricelist(){
     <td style="color:var(--muted);font-size:.82rem">${esc(h.duration||'')}</td>
     <td style="white-space:nowrap">
       <button class="icon-btn" onclick='editPrice(${JSON.stringify(h)})'><i class="fa-solid fa-pen"></i></button>
-      <button class="icon-btn danger" onclick="delPrice('${h.id}','${esc(h.name)}')"><i class="fa-solid fa-trash-can"></i></button>
+      <button class="icon-btn danger" data-id="${esc(h.id)}" data-name="${esc(h.name)}" onclick="delPrice(this.dataset.id,this.dataset.name)"><i class="fa-solid fa-trash-can"></i></button>
     </td></tr>`).join('');
 }
 function openPrice(){

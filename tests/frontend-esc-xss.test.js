@@ -79,3 +79,44 @@ test('admin.js: nama layanan berkutip-tunggal tidak lagi memutus onclick="delPri
   const encodedName = onclick.slice("delPrice('h1','".length, -"')".length);
   assert.ok(!encodedName.includes("'"), 'tidak boleh ada kutip tunggal mentah di dalam nilai ter-escape');
 });
+
+// Tes di atas hanya menguji esc() dalam string yang dibangun ulang secara manual,
+// bukan baris rendering ASLI di admin.js. Itu menyamarkan cacat yang lebih dalam:
+// atribut HTML seperti onclick="...'${esc(name)}'..." di-DECODE oleh parser HTML
+// (mengubah &#39; balik jadi ') SEBELUM isinya diparse sebagai JS oleh browser.
+// Jadi meng-escape kutip tunggal saja TIDAK cukup untuk konteks
+// JS-string-di-dalam-atribut-HTML — nama produk/layanan berisi `x'); alert(1); //`
+// tetap bisa menyuntik JS lewat tombol Hapus walau esc() sudah meng-escape kutip.
+// Perbaikan sesungguhnya: jangan pernah sisipkan data ke dalam teks onclick sama
+// sekali — taruh di atribut data-* (konteks HTML biasa, esc() sudah tepat untuk
+// itu) dan baca lewat this.dataset di dalam handler statis tanpa interpolasi.
+test('admin.js: tombol Hapus produk/layanan pakai data-* attribute, bukan sisipan ke string JS onclick', () => {
+  const src = readFileSync(path.join(root, 'public/js/admin.js'), 'utf8');
+  assert.ok(
+    src.includes(`onclick="delProduct(this.dataset.id,this.dataset.name)"`),
+    'tombol hapus produk harus memanggil delProduct lewat this.dataset, tanpa menyisipkan id/nama ke teks onclick'
+  );
+  assert.ok(
+    src.includes(`onclick="delPrice(this.dataset.id,this.dataset.name)"`),
+    'tombol hapus layanan harus memanggil delPrice lewat this.dataset, tanpa menyisipkan id/nama ke teks onclick'
+  );
+  // Pola lama (rentan) sungguh-sungguh tidak boleh ada lagi di source.
+  assert.ok(!src.includes(`onclick="delProduct('\${p.id}','\${esc(p.name)}')"`),
+    'pola onclick lama yang menyisipkan nama ke string JS masih ada di admin.js');
+  assert.ok(!src.includes(`onclick="delPrice('\${h.id}','\${esc(h.name)}')"`),
+    'pola onclick lama yang menyisipkan nama ke string JS masih ada di admin.js');
+});
+
+test('admin.js: nama produk/layanan apa pun di data-name tidak bisa memutus atribut HTML atau tereksekusi sebagai JS', () => {
+  const esc = loadEscFromArrowLine('public/js/admin.js', 'const esc = s =>');
+  const payload = `x"><img src=1 onerror=alert(document.cookie)>`;
+  const escaped = esc(payload);
+  // Hasil escape tidak boleh mengandung kutip ganda mentah — itu satu-satunya
+  // karakter yang bisa memutus atribut data-name="..." (dibatasi kutip ganda).
+  assert.ok(!escaped.includes('"'), 'kutip ganda mentah lolos — bisa memutus atribut data-name="..."');
+  assert.ok(!escaped.includes('<') && !escaped.includes('>'),
+    'tag mentah lolos — bisa menyisipkan elemen baru ke markup tabel admin');
+  // Karena onclick sekarang string statis (bukan hasil interpolasi), payload apa
+  // pun di data-name tidak pernah diparse sebagai kode JS — hanya diteruskan
+  // sebagai argumen fungsi lewat this.dataset.name saat tombol diklik.
+});
