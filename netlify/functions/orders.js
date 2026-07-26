@@ -1,5 +1,6 @@
 import { getProducts, getSettings, addOrder, expireStaleOrders,
-  orderRateStatus, noteOrderCreated, reserveStockFor, resolveShipping, sanitizeCustomer, json } from '../lib/data.js';
+  orderRateStatus, noteOrderCreated, reserveStockFor, resolveShipping, sanitizeCustomer,
+  pickPurchasableProduct, json } from '../lib/data.js';
 
 export default async (req, context) => {
   if (req.method !== 'POST') return json({ error: 'Method tidak didukung' }, 405);
@@ -26,7 +27,10 @@ export default async (req, context) => {
   let subtotal = 0;
   const orderItems = [];
   for (const it of items) {
-    const p = products.find(x => x.id === it.id);
+    // pickPurchasableProduct menolak produk yang admin sudah nonaktifkan —
+    // tanpa ini, produk yang disembunyikan dari /toko tetap bisa dipesan lewat
+    // cart lama pelanggan atau panggilan API langsung (lihat catatan di data.js).
+    const p = pickPurchasableProduct(products, it.id);
     if (!p) return json({ error: 'Produk tidak ditemukan' }, 400);
     const qty = Math.max(1, Number(it.qty) || 1);
     if (p.stock < qty) return json({ error: `Stok "${p.name}" tidak cukup (sisa ${p.stock})` }, 400);

@@ -144,6 +144,20 @@ export async function deleteProduct(id) {
   if (item && item.image) await deleteMediaByUrl(item.image);
 }
 
+// Cari produk untuk sebuah item order, tapi TOLAK produk yang admin sudah
+// nonaktifkan (toggle "Tampilkan di toko" di panel admin). /api/products
+// (listing publik toko) sudah menyaring `active !== false`, tapi getProducts()
+// yang dipakai orders.js tidak — jadi tanpa pengecekan ini, produk yang sengaja
+// disembunyikan (harga salah, stok fisik habis di luar sistem, ditarik dari
+// penjualan) tetap bisa dibeli lewat cart lama pelanggan atau panggilan
+// /api/orders langsung, walau sudah tak tampil di /toko sama sekali. Dipisah
+// jadi fungsi murni supaya bisa diuji tanpa Blobs, pola sama seperti
+// resolveShipping/applyStockReservation di atas.
+export function pickPurchasableProduct(products, id) {
+  const p = (products || []).find(x => x.id === id);
+  return (p && p.active !== false) ? p : null;
+}
+
 // Bangun field yang akan diterapkan ke produk dari body request admin
 // (dipakai untuk POST tambah & PUT edit). `active` HANYA disertakan kalau
 // memang dikirim eksplisit oleh klien — kalau tidak, PUT edit produk (mis.
@@ -335,6 +349,11 @@ async function deductStockFor(items) {
 // yang sama (mis. body request /api/orders dirakit manual), mengecek tiap
 // baris terhadap stok mentah yang sama membuat keduanya lolos sendiri-sendiri
 // padahal totalnya melebihi stok -> stok jadi minus setelah dipotong dua kali.
+// Produk nonaktif (active:false) juga ditolak DI SINI, bukan cuma di lookup
+// awal orders.js — reserveStockFor() membaca ulang produk TERKINI tepat
+// sebelum menulis untuk menutup celah race, jadi ini otoritas terakhir yang
+// melihat data terbaru (mis. admin menonaktifkan produk PERSIS di antara
+// lookup awal dan reservasi akhir).
 export function applyStockReservation(products, items) {
   const qtyById = new Map();
   for (const it of items) {
@@ -342,7 +361,7 @@ export function applyStockReservation(products, items) {
   }
   const short = [];
   for (const [id, qty] of qtyById) {
-    const p = products.find(x => x.id === id);
+    const p = pickPurchasableProduct(products, id);
     if (!p || (Number(p.stock) || 0) < qty) short.push(id);
   }
   if (short.length) return short;
