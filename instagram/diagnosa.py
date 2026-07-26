@@ -158,7 +158,7 @@ def main():
                   f" Tiap slot yang dipakai foto = kehilangan ~{mr - mf:.0f} jangkauan.")
 
     # ── Korelasi, Reel saja ──
-    reels = [m for m in reels_all if m.get('skip')]
+    reels = [m for m in reels_all if m.get('skip') is not None]
     print(f"\n2. APA YANG MENGGERAKKAN JANGKAUAN? (Reel matang, n={len(reels)})")
     if len(reels) < MIN_SAMPEL:
         print(f"    Sampel di bawah {MIN_SAMPEL} — korelasi tidak ditampilkan supaya tidak menyesatkan.")
