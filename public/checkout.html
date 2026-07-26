@@ -35,11 +35,11 @@
     <div class="checkout-grid">
       <div class="panel">
         <h3 style="font-family:var(--serif);font-weight:500;font-size:1.3rem;margin-bottom:6px">Data Pengiriman</h3>
-        <label for="fName">Nama Lengkap *</label><input id="fName" placeholder="Nama penerima"/>
-        <label for="fPhone">No. WhatsApp *</label><input id="fPhone" placeholder="08xxxxxxxxxx"/>
-        <label for="fAddr">Alamat Lengkap *</label><textarea id="fAddr" placeholder="Jalan, RT/RW, kelurahan, kecamatan"></textarea>
-        <label for="fCity">Kota / Kabupaten</label><input id="fCity" placeholder="mis. Jakarta Utara"/>
-        <label for="fNote">Catatan (opsional)</label><input id="fNote" placeholder="Patokan / permintaan khusus"/>
+        <label for="fName">Nama Lengkap *</label><input id="fName" name="name" type="text" autocomplete="name" maxlength="80" required placeholder="Nama penerima"/>
+        <label for="fPhone">No. WhatsApp *</label><input id="fPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" required placeholder="08xxxxxxxxxx"/>
+        <label for="fAddr">Alamat Lengkap *</label><textarea id="fAddr" name="address" autocomplete="street-address" maxlength="300" required placeholder="Jalan, RT/RW, kelurahan, kecamatan"></textarea>
+        <label for="fCity">Kota / Kabupaten</label><input id="fCity" name="city" type="text" autocomplete="address-level2" maxlength="60" placeholder="mis. Jakarta Utara"/>
+        <label for="fNote">Catatan (opsional)</label><input id="fNote" name="note" type="text" maxlength="300" placeholder="Patokan / permintaan khusus"/>
 
         <h3 style="font-family:var(--serif);font-weight:500;font-size:1.3rem;margin:22px 0 10px">Pengiriman</h3>
         <div id="shipOpts"></div>
