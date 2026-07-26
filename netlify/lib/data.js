@@ -144,6 +144,20 @@ export async function deleteProduct(id) {
   if (item && item.image) await deleteMediaByUrl(item.image);
 }
 
+// Cari produk untuk sebuah item order, tapi TOLAK produk yang admin sudah
+// nonaktifkan (toggle "Tampilkan di toko" di panel admin). /api/products
+// (listing publik toko) sudah menyaring `active !== false`, tapi getProducts()
+// yang dipakai orders.js tidak — jadi tanpa pengecekan ini, produk yang sengaja
+// disembunyikan (harga salah, stok fisik habis di luar sistem, ditarik dari
+// penjualan) tetap bisa dibeli lewat cart lama pelanggan atau panggilan
+// /api/orders langsung, walau sudah tak tampil di /toko sama sekali. Dipisah
+// jadi fungsi murni supaya bisa diuji tanpa Blobs, pola sama seperti
+// resolveShipping/applyStockReservation di atas.
+export function pickPurchasableProduct(products, id) {
+  const p = (products || []).find(x => x.id === id);
+  return (p && p.active !== false) ? p : null;
+}
+
 // Bangun field yang akan diterapkan ke produk dari body request admin
 // (dipakai untuk POST tambah & PUT edit). `active` HANYA disertakan kalau
 // memang dikirim eksplisit oleh klien — kalau tidak, PUT edit produk (mis.
