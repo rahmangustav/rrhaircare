@@ -144,7 +144,7 @@ async function loadOrders(){
   box.innerHTML = list.map(o => {
     const st = STATUS[o.status]||{l:o.status,c:'b-selesai'};
     const items = o.items.map(i=>`<div class="summary-item" style="display:flex;justify-content:space-between;padding:6px 0"><span>${esc(i.name)} ×${i.qty}</span><span>${rupiah(i.price*i.qty)}</span></div>`).join('');
-    const proof = o.paymentProof? `<div><b>Bukti bayar:</b><br><a href="${o.paymentProof}" target="_blank"><img class="proof-img" src="${o.paymentProof}"/></a></div>` : '<div class="help">Belum ada bukti pembayaran.</div>';
+    const proof = o.paymentProof? `<div><b>Bukti bayar:</b><br><a href="${o.paymentProof}" target="_blank" rel="noopener noreferrer"><img class="proof-img" src="${o.paymentProof}"/></a></div>` : '<div class="help">Belum ada bukti pembayaran.</div>';
     const d = new Date(o.createdAt);
     return `<details class="order">
       <summary>
@@ -169,7 +169,7 @@ async function loadOrders(){
             <select onchange="setStatus('${o.id}',this.value)">
               ${Object.keys(STATUS).map(k=>`<option value="${k}" ${o.status===k?'selected':''}>${STATUS[k].l}</option>`).join('')}
             </select>
-            <a class="btn btn-outline btn-block" style="margin-top:10px" target="_blank"
+            <a class="btn btn-outline btn-block" style="margin-top:10px" target="_blank" rel="noopener noreferrer"
               href="https://wa.me/${(o.customer.phone||'').replace(/\D/g,'').replace(/^0/,'62')}?text=${encodeURIComponent('Halo '+o.customer.name+', pesanan '+o.code+' di RR Hair Care')}">
               <i class="fa-brands fa-whatsapp"></i> Chat Pembeli</a>
           </div>
