@@ -70,6 +70,7 @@ export async function noteLogin(ip, ok) {
 }
 
 // ── Token admin (HMAC, stateless) ──
+export const newAuthSecret = () => randomBytes(32).toString('hex');
 function b64url(buf) { return Buffer.from(buf).toString('base64url'); }
 export function signToken(secret, hours = 12) {
   const payload = b64url(JSON.stringify({ exp: Date.now() + hours * 3600e3 }));
@@ -101,7 +102,7 @@ export async function getSettings() {
         { id: 'ambil', label: 'Ambil di salon (Koja) — gratis', price: 0 }
       ],
       adminPassword: hashPassword('admin123'),
-      authSecret: randomBytes(32).toString('hex')
+      authSecret: newAuthSecret()
     };
     await writeJSON('settings', s);
   }

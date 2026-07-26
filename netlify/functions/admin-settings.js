@@ -1,4 +1,4 @@
-import { requireAuth, getSettings, saveSettings, saveMedia, hashPassword, deleteMediaByUrl, json } from '../lib/data.js';
+import { requireAuth, getSettings, saveSettings, saveMedia, hashPassword, newAuthSecret, deleteMediaByUrl, json } from '../lib/data.js';
 
 export default async (req) => {
   if (!(await requireAuth(req))) return json({ error: 'Perlu login admin' }, 401);
@@ -21,7 +21,13 @@ export default async (req) => {
       try { patch.qrisImage = await saveMedia(b.qrisData); }
       catch (e) { return json({ error: 'Ukuran gambar terlalu besar (maks 4 MB)' }, 413); }
     }
-    if (b.newPassword) patch.adminPassword = hashPassword(b.newPassword);
+    // Ganti password = titik pemulihan akun (token bocor, perangkat dicuri, dst).
+    // authSecret ikut diregenerasi supaya semua token lama (ditandatangani
+    // secret lama) langsung tercabut, bukan tetap sah sampai 12 jam habis.
+    if (b.newPassword) {
+      patch.adminPassword = hashPassword(b.newPassword);
+      patch.authSecret = newAuthSecret();
+    }
     const { adminPassword, authSecret, ...rest } = await saveSettings(patch);
     if (oldQris && oldQris !== patch.qrisImage) await deleteMediaByUrl(oldQris);
     return json({ ok: true, settings: rest });

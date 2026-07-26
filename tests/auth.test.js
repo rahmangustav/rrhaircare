@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  hashPassword, verifyPassword, signToken, verifyToken,
+  hashPassword, verifyPassword, signToken, verifyToken, newAuthSecret,
   computeLoginRateStatus, nextLoginRateRecord,
 } from '../netlify/lib/data.js';
 
@@ -73,6 +73,33 @@ test('verifyToken: token kosong/tanpa titik/rusak -> false, tidak throw', () => 
   assert.equal(verifyToken(null, 'secret'), false);
   assert.equal(verifyToken('tanpa-titik', 'secret'), false);
   assert.equal(verifyToken('payload-rusak.sig-rusak', 'secret'), false);
+});
+
+// ── newAuthSecret (rotasi authSecret saat ganti password) ──
+// admin-settings.js PUT dengan newPassword harus meregenerasi authSecret
+// (bukan cuma adminPassword) supaya token lama yang bocor tak lagi sah
+// setelah pemilik toko sengaja ganti password sebagai langkah pengamanan.
+
+test('newAuthSecret: menghasilkan string hex 64 karakter (32 byte)', () => {
+  const secret = newAuthSecret();
+  assert.equal(typeof secret, 'string');
+  assert.match(secret, /^[0-9a-f]{64}$/);
+});
+
+test('newAuthSecret: dua panggilan menghasilkan nilai berbeda', () => {
+  assert.notEqual(newAuthSecret(), newAuthSecret());
+});
+
+test('simulasi ganti password: token lama tak lagi valid setelah authSecret dirotasi', () => {
+  const oldSecret = newAuthSecret();
+  const tokenBocor = signToken(oldSecret, 12); // token admin yang sudah beredar/bocor
+
+  // Pemilik toko ganti password -> admin-settings.js meregenerasi authSecret.
+  const newSecret = newAuthSecret();
+
+  assert.equal(verifyToken(tokenBocor, newSecret), false, 'token lama harus tercabut');
+  const tokenBaru = signToken(newSecret, 12);
+  assert.equal(verifyToken(tokenBaru, newSecret), true, 'login ulang menghasilkan token yang sah');
 });
 
 // ── computeLoginRateStatus / nextLoginRateRecord ──
