@@ -8,3 +8,15 @@
 
 # Halaman utama & aset dilayani statis dari /public.
 # Rute /api/* ditangani oleh Netlify Functions (lihat config.path di tiap fungsi).
+
+# Header keamanan dasar untuk seluruh situs (termasuk /admin.html yang punya
+# form login) — situs ini tidak pernah perlu di-embed di iframe pihak lain,
+# jadi framing selalu ditolak untuk mencegah clickjacking.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    Content-Security-Policy = "frame-ancestors 'none'"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
