@@ -1301,7 +1301,11 @@
 
     const url = `https://wa.me/6281386291552?text=${encodeURIComponent(pesan)}`;
     if (window.catatBooking) window.catatBooking(); // form lengkap = niat tertinggi
-    window.open(url, '_blank');
+    // 'noopener' WAJIB di parameter fitur window.open, sama seperti rel="noopener"
+    // di tautan <a target="_blank"> — tanpa itu tab wa.me yang baru dibuka masih
+    // pegang window.opener dan bisa mengarahkan diam-diam tab booking ini ke
+    // halaman phishing (reverse tabnabbing, CWE-1022).
+    window.open(url, '_blank', 'noopener,noreferrer');
     showToast('✅ Membuka WhatsApp...');
   }
 
