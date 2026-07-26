@@ -455,7 +455,13 @@ async function saveInfo(){
 async function changePw(){
   const np = document.getElementById('newPw').value;
   if (np.length < 6){ toast('Password minimal 6 karakter'); return; }
-  try { await api('/api/admin/settings',{method:'PUT',body:{newPassword:np}}); toast('Password diganti'); document.getElementById('newPw').value=''; } catch(e){ toast(e.message); }
+  try {
+    await api('/api/admin/settings',{method:'PUT',body:{newPassword:np}});
+    document.getElementById('newPw').value='';
+    // Ganti password mencabut semua token lama (termasuk punya kita sendiri) —
+    // login ulang dengan sengaja, bukan menunggu 401 nyasar di aksi berikutnya.
+    logout(); toast('Password diganti, silakan login lagi');
+  } catch(e){ toast(e.message); }
 }
 
 // Auto-enter kalau sudah ada token
