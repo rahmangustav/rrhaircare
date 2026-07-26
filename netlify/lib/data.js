@@ -458,6 +458,22 @@ const SOURCE_HOSTS = [
 ];
 const SOURCE_ALIAS = { yt: 'YouTube', youtube: 'YouTube', ig: 'Instagram', instagram: 'Instagram', wa: 'WhatsApp', whatsapp: 'WhatsApp', fb: 'Facebook', facebook: 'Facebook', tiktok: 'TikTok', tt: 'TikTok' };
 
+// recordHit/recordGoal publik tanpa auth, dan path (normalizePath) maupun host
+// (classifySource) di dalamnya bisa berisi APA SAJA yang dikirim klien — beda
+// dari ANALYTICS_MAX_PER_WINDOW di atas yang cuma membatasi FREKUENSI panggilan
+// per IP. Tanpa batas ini, siapa pun bisa mengirim path atau referrer palsu yang
+// berbeda-beda tanpa henti (dari banyak IP, atau perlahan dari waktu ke waktu)
+// dan membuat peta pages/sources di blob 'analytics' membengkak tanpa batas.
+// Entri yang SUDAH ada tetap terus bertambah hitungannya; hanya entri BARU yang
+// ditolak begitu batas tercapai — trafik asli (jumlah halaman/kanal nyata jauh
+// di bawah batas ini) tak pernah terpengaruh.
+const MAX_TRACKED_PAGES = 300;
+const MAX_TRACKED_SOURCES = 100;
+
+export function canTrackKey(map, key, max) {
+  return Object.prototype.hasOwnProperty.call(map, key) || Object.keys(map).length < max;
+}
+
 export function classifySource(ref = '', campaign = '', selfHost = '') {
   const c = (campaign || '').toString().trim().toLowerCase().slice(0, 40);
   if (c) return SOURCE_ALIAS[c] || (c.charAt(0).toUpperCase() + c.slice(1));
@@ -506,7 +522,7 @@ export async function recordHit({ path = '/', ip = '', ref = '', campaign = '', 
   }
 
   const p = normalizePath(path);
-  a.pages[p] = (a.pages[p] || 0) + 1;
+  if (canTrackKey(a.pages, p, MAX_TRACKED_PAGES)) a.pages[p] = (a.pages[p] || 0) + 1;
 
   // Asal kunjungan: dicatat sekali per pengunjung per hari (bukan tiap halaman),
   // supaya klik-klik di dalam situs tak menggelembungkan angkanya.
@@ -515,9 +531,11 @@ export async function recordHit({ path = '/', ip = '', ref = '', campaign = '', 
     a.sources = a.sources || {};
     const firstOfDay = !id || a.seen.ids[id] === 1; // 1 = baru saja dihitung sebagai pengunjung baru
     if (firstOfDay) {
-      a.sources[src] = a.sources[src] || { total: 0, days: {} };
-      a.sources[src].total++;
-      a.sources[src].days[day] = (a.sources[src].days[day] || 0) + 1;
+      if (canTrackKey(a.sources, src, MAX_TRACKED_SOURCES)) {
+        a.sources[src] = a.sources[src] || { total: 0, days: {} };
+        a.sources[src].total++;
+        a.sources[src].days[day] = (a.sources[src].days[day] || 0) + 1;
+      }
       if (id) a.seen.ids[id] = 2; // tandai sudah punya sumber, jangan dihitung lagi hari ini
     }
   }
@@ -553,7 +571,7 @@ export async function recordGoal({ name = '', spot = '', ref = '', campaign = ''
   // Asal DIAMBIL DARI AWAL SESI (dikirim klien), bukan dari halaman tempat
   // tombol diklik — kalau tidak, semua konversi tampak berasal dari situs sendiri.
   const src = classifySource(ref, campaign, selfHost) || 'Langsung';
-  g.sources[src] = (g.sources[src] || 0) + 1;
+  if (canTrackKey(g.sources, src, MAX_TRACKED_SOURCES)) g.sources[src] = (g.sources[src] || 0) + 1;
 
   a.updatedAt = Date.now();
   await stats().setJSON('analytics', a);
