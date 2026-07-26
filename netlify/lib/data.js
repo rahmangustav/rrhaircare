@@ -349,6 +349,11 @@ async function deductStockFor(items) {
 // yang sama (mis. body request /api/orders dirakit manual), mengecek tiap
 // baris terhadap stok mentah yang sama membuat keduanya lolos sendiri-sendiri
 // padahal totalnya melebihi stok -> stok jadi minus setelah dipotong dua kali.
+// Produk nonaktif (active:false) juga ditolak DI SINI, bukan cuma di lookup
+// awal orders.js — reserveStockFor() membaca ulang produk TERKINI tepat
+// sebelum menulis untuk menutup celah race, jadi ini otoritas terakhir yang
+// melihat data terbaru (mis. admin menonaktifkan produk PERSIS di antara
+// lookup awal dan reservasi akhir).
 export function applyStockReservation(products, items) {
   const qtyById = new Map();
   for (const it of items) {
@@ -356,7 +361,7 @@ export function applyStockReservation(products, items) {
   }
   const short = [];
   for (const [id, qty] of qtyById) {
-    const p = products.find(x => x.id === id);
+    const p = pickPurchasableProduct(products, id);
     if (!p || (Number(p.stock) || 0) < qty) short.push(id);
   }
   if (short.length) return short;
