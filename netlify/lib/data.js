@@ -125,14 +125,25 @@ export async function addProduct(p) {
     active: p.active !== false, createdAt: Date.now() };
   list.unshift(item); await saveProducts(list); return item;
 }
+// Terapkan patch ke produk yang sudah ada. Sama seperti addProduct, price/stock
+// dijaga selalu berupa angka lewat `Number(...) || 0` — tanpa fallback ini,
+// patch.price/stock non-numerik (mis. payload API admin yang salah bentuk,
+// bukan lewat form HTML number yang biasanya sudah tervalidasi browser)
+// menghasilkan NaN, dan JSON.stringify() diam-diam mengubah NaN jadi `null`
+// saat disimpan — harga/stok produk hilang tanpa error apa pun. Dipisah dari
+// I/O Blobs supaya bisa dites sebagai fungsi murni, mengikuti pola
+// applyStockReservation di atas.
+export function applyProductPatch(existing, patch) {
+  return { ...existing, ...patch,
+    price: patch.price !== undefined ? (Number(patch.price) || 0) : existing.price,
+    stock: patch.stock !== undefined ? (Number(patch.stock) || 0) : existing.stock };
+}
 export async function updateProduct(id, patch) {
   const list = await getProducts();
   const i = list.findIndex(p => p.id === id);
   if (i < 0) return null;
   const oldImage = list[i].image;
-  list[i] = { ...list[i], ...patch,
-    price: patch.price !== undefined ? Number(patch.price) : list[i].price,
-    stock: patch.stock !== undefined ? Number(patch.stock) : list[i].stock };
+  list[i] = applyProductPatch(list[i], patch);
   await saveProducts(list);
   if (patch.image !== undefined && oldImage && oldImage !== patch.image) await deleteMediaByUrl(oldImage);
   return list[i];
