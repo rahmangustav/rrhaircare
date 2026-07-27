@@ -75,6 +75,19 @@ test('verifyToken: token kosong/tanpa titik/rusak -> false, tidak throw', () => 
   assert.equal(verifyToken('payload-rusak.sig-rusak', 'secret'), false);
 });
 
+// Token admin stateless (HMAC + exp), tidak ada blocklist per-token di server.
+// admin-logout.js mencabut token yang beredar dengan mengganti authSecret —
+// test ini menjaga asumsi itu: token lama harus langsung tak valid begitu
+// secret berubah, walau masa berlakunya (exp) belum habis.
+test('rotasi authSecret (simulasi logout): token lama tetap dalam masa berlaku tapi langsung tak valid setelah secret diganti', () => {
+  const secretLama = 'secret-sebelum-logout';
+  const token = signToken(secretLama, 12);
+  assert.equal(verifyToken(token, secretLama), true, 'sanity check: token valid dengan secret lama');
+
+  const secretBaru = 'secret-setelah-logout';
+  assert.equal(verifyToken(token, secretBaru), false, 'token lama harus tercabut setelah authSecret dirotasi');
+});
+
 // ── computeLoginRateStatus / nextLoginRateRecord ──
 // Anti brute-force login admin: 5 gagal berturut dalam 15 menit -> kunci 15 menit.
 
