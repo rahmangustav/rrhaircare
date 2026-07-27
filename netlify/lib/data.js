@@ -169,6 +169,16 @@ export const ORDER_HOLD_MS = 24 * 3600e3; // 24 jam untuk bayar
 const ORDER_MAX_PER_WINDOW = 5;     // maks order baru per IP dalam jendela
 const ORDER_WINDOW_MS = 30 * 60e3;  // jendela 30 menit
 
+// Bulatkan qty item order ke bilangan bulat positif (minimal 1). Tanpa ini,
+// body /api/orders yang dirakit manual (bukan lewat tombol +/- di
+// checkout.html, yang selalu kirim bulat) bisa mengirim qty pecahan seperti
+// 1.7 — lolos begitu saja lalu tersimpan permanen sebagai stok desimal
+// (mis. "Stok: 3.3") yang tak bisa diperbaiki lewat form admin (cuma terima
+// angka biasa) dan terus terbawa tiap kali order dibatalkan/diaktifkan lagi.
+export function normalizeOrderQty(raw) {
+  return Math.max(1, Math.round(Number(raw)) || 1);
+}
+
 // Logika murni (tanpa Blobs) — dipisah supaya bisa dites langsung.
 export function computeOrderRateStatus(rec, now) {
   if (!rec || now - rec.firstAt > ORDER_WINDOW_MS) return { blocked: false, retryAfter: 0 };
