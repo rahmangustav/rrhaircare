@@ -53,8 +53,23 @@ document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () =>
 }));
 
 // ── Produk ──
+// Cache list terakhir dimuat, dipakai editProduct/delProduct supaya onclick di
+// baris tabel HANYA membawa `p.id` (string aman apa adanya dari server) — bukan
+// nama/objek produk mentah. Sebelumnya onclick editProduct menaruh hasil
+// JSON.stringify() dari seluruh objek produk APA ADANYA (tanpa escape sama
+// sekali) di dalam atribut berkutip-tunggal: nama produk mengandung satu
+// kutip tunggal saja sudah memutus atribut itu di tengah dan menyuntik
+// markup/atribut bebas. onclick delProduct yang membawa id lalu nama ter-escape
+// juga TIDAK benar-benar aman meski esc() meng-encode kutip tunggal jadi `&#39;`
+// — browser men-decode entity HTML di NILAI atribut (termasuk atribut event
+// seperti onclick) SEBELUM string itu dikompilasi jadi kode JS, jadi `&#39;`
+// balik lagi jadi kutip tunggal mentah persis saat handler dijalankan, dan JS
+// tetap bisa disuntik. Karena p.id dijamin server (`p_<base36>` + hex acak,
+// tak pernah berisi kutip/karakter HTML), aman ditaruh langsung di onclick.
+let PRODUCTS_CACHE = [];
 async function loadProducts(){
   const list = await api('/api/admin/products');
+  PRODUCTS_CACHE = list;
   const body = document.getElementById('prodBody');
   if (!list.length){ body.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:30px">Belum ada produk. Klik “Tambah Produk”.</td></tr>'; return; }
   body.innerHTML = list.map(p => {
@@ -67,8 +82,8 @@ async function loadProducts(){
       <td>${p.stock}</td>
       <td>${p.active!==false?'<span class="badge b-kirim">Tampil</span>':'<span class="badge b-selesai">Hidden</span>'}</td>
       <td style="white-space:nowrap">
-        <button class="icon-btn" onclick='editProduct(${JSON.stringify(p)})'><i class="fa-solid fa-pen"></i></button>
-        <button class="icon-btn danger" onclick="delProduct('${p.id}','${esc(p.name)}')"><i class="fa-solid fa-trash-can"></i></button>
+        <button class="icon-btn" onclick="editProduct('${p.id}')"><i class="fa-solid fa-pen"></i></button>
+        <button class="icon-btn danger" onclick="delProduct('${p.id}')"><i class="fa-solid fa-trash-can"></i></button>
       </td></tr>`;
   }).join('');
 }
@@ -79,7 +94,9 @@ function openProduct(){
   document.getElementById('pImg').value=''; document.getElementById('pImgPreview').innerHTML='';
   document.getElementById('prodModal').classList.add('show');
 }
-function editProduct(p){
+function editProduct(id){
+  const p = PRODUCTS_CACHE.find(x=>x.id===id);
+  if (!p) return;
   document.getElementById('modalTitle').textContent='Edit Produk';
   document.getElementById('pId').value=p.id;
   document.getElementById('pName').value=p.name;
@@ -113,8 +130,9 @@ async function saveProduct(){
     toast(id?'Produk diperbarui':'Produk ditambahkan'); closeProduct(); loadProducts();
   } catch(e){ toast(e.message); }
 }
-async function delProduct(id,name){
-  if (!confirm(`Hapus produk "${name}"?`)) return;
+async function delProduct(id){
+  const p = PRODUCTS_CACHE.find(x=>x.id===id);
+  if (!confirm(`Hapus produk "${p?p.name:''}"?`)) return;
   try { await api(`/api/admin/products/${id}`,{method:'DELETE'}); toast('Produk dihapus'); loadProducts(); }
   catch(e){ toast(e.message); }
 }
@@ -351,9 +369,14 @@ document.getElementById('gImg')?.addEventListener('change', async function(){
 });
 
 // ── Daftar Harga ──
+// Sama seperti PRODUCTS_CACHE di atas: onclick baris tabel cuma bawa `h.id`
+// (aman, dibuat server), editPrice/delPrice cari objeknya sendiri dari cache
+// — bukan menyisipkan JSON.stringify(h) atau nama layanan mentah ke onclick.
+let PRICELIST_CACHE = [];
 async function loadPricelist(){
   let list;
   try { list = await api('/api/admin/pricelist'); } catch(e){ return; }
+  PRICELIST_CACHE = list;
   document.getElementById('priceCount').textContent = list.length ? `${list.length} layanan` : '';
   const body = document.getElementById('priceBody');
   if (!list.length){ body.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:26px">Belum ada harga. Import CSV atau klik “Tambah Layanan”.</td></tr>'; return; }
@@ -364,8 +387,8 @@ async function loadPricelist(){
     <td>${h.promo?`<span style="color:#b0603f">${rupiah(h.promo)}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
     <td style="color:var(--muted);font-size:.82rem">${esc(h.duration||'')}</td>
     <td style="white-space:nowrap">
-      <button class="icon-btn" onclick='editPrice(${JSON.stringify(h)})'><i class="fa-solid fa-pen"></i></button>
-      <button class="icon-btn danger" onclick="delPrice('${h.id}','${esc(h.name)}')"><i class="fa-solid fa-trash-can"></i></button>
+      <button class="icon-btn" onclick="editPrice('${h.id}')"><i class="fa-solid fa-pen"></i></button>
+      <button class="icon-btn danger" onclick="delPrice('${h.id}')"><i class="fa-solid fa-trash-can"></i></button>
     </td></tr>`).join('');
 }
 function openPrice(){
@@ -373,7 +396,9 @@ function openPrice(){
   ['hId','hName','hCat','hPrice','hPromo','hDur'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('priceModal').classList.add('show');
 }
-function editPrice(h){
+function editPrice(id){
+  const h = PRICELIST_CACHE.find(x=>x.id===id);
+  if (!h) return;
   document.getElementById('priceModalTitle').textContent='Edit Layanan';
   document.getElementById('hId').value=h.id;
   document.getElementById('hName').value=h.name||'';
@@ -399,8 +424,9 @@ async function savePrice(){
     toast(id?'Layanan diperbarui':'Layanan ditambahkan'); closePrice(); loadPricelist();
   } catch(e){ toast(e.message); }
 }
-async function delPrice(id,name){
-  if (!confirm(`Hapus "${name}" dari daftar harga?`)) return;
+async function delPrice(id){
+  const h = PRICELIST_CACHE.find(x=>x.id===id);
+  if (!confirm(`Hapus "${h?h.name:''}" dari daftar harga?`)) return;
   try { await api(`/api/admin/pricelist/${id}`,{method:'DELETE'}); toast('Layanan dihapus'); loadPricelist(); }
   catch(e){ toast(e.message); }
 }
