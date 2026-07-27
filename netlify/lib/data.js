@@ -490,40 +490,69 @@ export function normalizePath(path) {
   return (typeof path === 'string' && path ? path : '/').slice(0, 120);
 }
 
+// recordHit/recordGoal dulu baca blob 'analytics' sekali, ubah in-memory, lalu tulis
+// balik SELURUH snapshot itu -- read-modify-write tanpa penguncian. Netlify Blobs
+// (SDK versi ini) tidak punya conditional write (compare-and-swap, lihat
+// updateOrder/updateOrderByCode di atas untuk keterbatasan yang sama), jadi dua
+// request /api/hit atau /api/goal yang datang nyaris bersamaan bisa saling
+// menimpa: yang menulis belakangan menang, increment yang lain hilang diam-diam
+// (undercount views/visitors/goals -- makin mungkin justru saat trafik ramai,
+// waktu datanya paling penting). writeAnalyticsWithRetry mempersempit jendela itu:
+// baca ulang etag blob TEPAT sebelum menulis, dan kalau sudah berubah (invocation
+// lain menulis duluan), ulangi mutasi dari data TERBARU alih-alih menimpa buta
+// dengan data basi -- pola yang sama dengan applyOrderPatch/fresh-read di atas.
+// `store` diterima sebagai parameter (bukan langsung panggil stats()) supaya bisa
+// diuji dengan store palsu tanpa jaringan (lihat tests/analytics-retry.test.js).
+export async function writeAnalyticsWithRetry(store, mutate, { maxAttempts = 4 } = {}) {
+  let current = await store.getWithMetadata('analytics', { type: 'json' });
+  let data = current ? current.data : null;
+  let etag = current ? current.etag : undefined;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const next = mutate(structuredClone(data || emptyStats()));
+    if (attempt < maxAttempts) {
+      const fresh = await store.getWithMetadata('analytics', { type: 'json' });
+      const freshEtag = fresh ? fresh.etag : undefined;
+      if (freshEtag !== etag) { data = fresh ? fresh.data : null; etag = freshEtag; continue; }
+    }
+    await store.setJSON('analytics', next);
+    return next;
+  }
+}
+
 // Keunikan pengunjung ditentukan SERVER dari IP, bukan dari klien (anti manipulasi).
 export async function recordHit({ path = '/', ip = '', ref = '', campaign = '', selfHost = '' } = {}) {
-  const a = (await stats().get('analytics', { type: 'json' })) || emptyStats();
   const day = todayJakarta();
-  a.days[day] = a.days[day] || { views: 0, visitors: 0 };
-  a.total.views++; a.days[day].views++;
-
-  // Himpunan IP yang sudah tampil — hanya untuk hari berjalan, direset saat ganti hari.
-  if (!a.seen || a.seen.day !== day) a.seen = { day, ids: {} };
-  const id = visitorId(ip, day);
-  if (id && !a.seen.ids[id]) {
-    a.seen.ids[id] = 1;
-    a.total.visitors++; a.days[day].visitors++;
-  }
-
   const p = normalizePath(path);
-  a.pages[p] = (a.pages[p] || 0) + 1;
+  return writeAnalyticsWithRetry(stats(), (a) => {
+    a.days[day] = a.days[day] || { views: 0, visitors: 0 };
+    a.total.views++; a.days[day].views++;
 
-  // Asal kunjungan: dicatat sekali per pengunjung per hari (bukan tiap halaman),
-  // supaya klik-klik di dalam situs tak menggelembungkan angkanya.
-  const src = classifySource(ref, campaign, selfHost);
-  if (src) {
-    a.sources = a.sources || {};
-    const firstOfDay = !id || a.seen.ids[id] === 1; // 1 = baru saja dihitung sebagai pengunjung baru
-    if (firstOfDay) {
-      a.sources[src] = a.sources[src] || { total: 0, days: {} };
-      a.sources[src].total++;
-      a.sources[src].days[day] = (a.sources[src].days[day] || 0) + 1;
-      if (id) a.seen.ids[id] = 2; // tandai sudah punya sumber, jangan dihitung lagi hari ini
+    // Himpunan IP yang sudah tampil — hanya untuk hari berjalan, direset saat ganti hari.
+    if (!a.seen || a.seen.day !== day) a.seen = { day, ids: {} };
+    const id = visitorId(ip, day);
+    if (id && !a.seen.ids[id]) {
+      a.seen.ids[id] = 1;
+      a.total.visitors++; a.days[day].visitors++;
     }
-  }
-  a.updatedAt = Date.now();
-  await stats().setJSON('analytics', a);
-  return a;
+
+    a.pages[p] = (a.pages[p] || 0) + 1;
+
+    // Asal kunjungan: dicatat sekali per pengunjung per hari (bukan tiap halaman),
+    // supaya klik-klik di dalam situs tak menggelembungkan angkanya.
+    const src = classifySource(ref, campaign, selfHost);
+    if (src) {
+      a.sources = a.sources || {};
+      const firstOfDay = !id || a.seen.ids[id] === 1; // 1 = baru saja dihitung sebagai pengunjung baru
+      if (firstOfDay) {
+        a.sources[src] = a.sources[src] || { total: 0, days: {} };
+        a.sources[src].total++;
+        a.sources[src].days[day] = (a.sources[src].days[day] || 0) + 1;
+        if (id) a.seen.ids[id] = 2; // tandai sudah punya sumber, jangan dihitung lagi hari ini
+      }
+    }
+    a.updatedAt = Date.now();
+    return a;
+  });
 }
 
 // Sasaran konversi: peristiwa yang benar-benar berarti buat salon, terutama
@@ -537,27 +566,27 @@ export const GOAL_SPOTS = ['form', 'float', 'lokasi', 'footer', 'karir', 'checko
 
 export async function recordGoal({ name = '', spot = '', ref = '', campaign = '', selfHost = '' } = {}) {
   if (!GOAL_NAMES.includes(name)) return null;
-  const a = (await stats().get('analytics', { type: 'json' })) || emptyStats();
   const day = todayJakarta();
+  const a = await writeAnalyticsWithRetry(stats(), (a) => {
+    a.goals = a.goals || {};
+    const g = (a.goals[name] = a.goals[name] || { total: 0, days: {}, sources: {} });
+    g.total++;
+    g.days[day] = (g.days[day] || 0) + 1;
 
-  a.goals = a.goals || {};
-  const g = (a.goals[name] = a.goals[name] || { total: 0, days: {}, sources: {} });
-  g.total++;
-  g.days[day] = (g.days[day] || 0) + 1;
+    if (GOAL_SPOTS.includes(spot)) {
+      g.spots = g.spots || {};
+      g.spots[spot] = (g.spots[spot] || 0) + 1;
+    }
 
-  if (GOAL_SPOTS.includes(spot)) {
-    g.spots = g.spots || {};
-    g.spots[spot] = (g.spots[spot] || 0) + 1;
-  }
+    // Asal DIAMBIL DARI AWAL SESI (dikirim klien), bukan dari halaman tempat
+    // tombol diklik — kalau tidak, semua konversi tampak berasal dari situs sendiri.
+    const src = classifySource(ref, campaign, selfHost) || 'Langsung';
+    g.sources[src] = (g.sources[src] || 0) + 1;
 
-  // Asal DIAMBIL DARI AWAL SESI (dikirim klien), bukan dari halaman tempat
-  // tombol diklik — kalau tidak, semua konversi tampak berasal dari situs sendiri.
-  const src = classifySource(ref, campaign, selfHost) || 'Langsung';
-  g.sources[src] = (g.sources[src] || 0) + 1;
-
-  a.updatedAt = Date.now();
-  await stats().setJSON('analytics', a);
-  return g;
+    a.updatedAt = Date.now();
+    return a;
+  });
+  return a.goals[name];
 }
 
 export async function getStats() {
