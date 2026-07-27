@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   hashPassword, verifyPassword, signToken, verifyToken,
-  computeLoginRateStatus, nextLoginRateRecord,
+  computeLoginRateStatus, nextLoginRateRecord, isDefaultPassword,
 } from '../netlify/lib/data.js';
 
 // ── hashPassword / verifyPassword ──
@@ -39,6 +39,21 @@ test('verifyPassword: hash beda panjang tidak menyebabkan timingSafeEqual throw'
   // hash target sengaja dipendekkan -> panjang buffer beda dari hasil scrypt (64 byte -> 128 hex).
   const stored = 'garam:abcd';
   assert.equal(verifyPassword('apa saja', stored), false);
+});
+
+// ── isDefaultPassword ──
+// "admin123" ter-hardcode sebagai password awal (lihat getSettings) dan
+// didokumentasikan publik di DEPLOY.md/PANDUAN.md. isDefaultPassword()
+// dipakai admin-settings.js untuk menampilkan peringatan sampai diganti.
+
+test('isDefaultPassword: settings baru (belum diganti) -> true', () => {
+  const settings = { adminPassword: hashPassword('admin123') };
+  assert.equal(isDefaultPassword(settings), true);
+});
+
+test('isDefaultPassword: password sudah diganti -> false', () => {
+  const settings = { adminPassword: hashPassword('sudahDigantiRahman!') };
+  assert.equal(isDefaultPassword(settings), false);
 });
 
 // ── signToken / verifyToken ──

@@ -428,6 +428,7 @@ async function loadSettings(){
   document.getElementById('qrisPreview').innerHTML = s.qrisImage? `<img src="${s.qrisImage}" style="max-width:150px;border-radius:10px;border:1px solid var(--line)"/>`:'<span class="help">Belum ada QRIS.</span>';
   SHIP = s.shippingOptions||[];
   renderShipEditor();
+  document.getElementById('pwWarning').classList.toggle('show', !!s.usingDefaultPassword);
 }
 function renderShipEditor(){
   document.getElementById('shipEditor').innerHTML = SHIP.map((s,i)=>`
