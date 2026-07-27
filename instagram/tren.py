@@ -59,7 +59,11 @@ def siapkan(d: dict) -> tuple:
 
 
 def med(rows: list, kunci: str):
-    nilai = [r[kunci] for r in rows if r.get(kunci)]
+    # `is not None` (bukan cek truthy) — skip rate 0.0 itu hook TERBAIK yang
+    # mungkin (nol yang kabur di 3 detik pertama), bukan data kosong. Cek
+    # truthy lama ikut membuang baris itu dari median, persis kelas bug yang
+    # sama dengan skip=0 terbuang di diagnosa.py.
+    nilai = [r[kunci] for r in rows if r.get(kunci) is not None]
     return statistics.median(nilai) if nilai else None
 
 
@@ -75,7 +79,7 @@ def per_minggu(matang: list) -> None:
         g = minggu[k]
         j, s = med(g, "reach"), med(g, "skip")
         bag = sum(x.get("shares", 0) for x in g)
-        print(f"{k:<14}{len(g):>3}{j:>15.0f}{(f'{s:.1f}%' if s else '—'):>11}{bag:>17}")
+        print(f"{k:<14}{len(g):>3}{j:>15.0f}{(f'{s:.1f}%' if s is not None else '—'):>11}{bag:>17}")
 
 
 def dua_periode(matang: list) -> None:
@@ -89,14 +93,14 @@ def dua_periode(matang: list) -> None:
     for nama, g in (("paruh LAMA", lama), ("paruh BARU", baru)):
         j, s = med(g, "reach"), med(g, "skip")
         print(f"  {nama:<12} {g[0]['tanggal'][:10]} → {g[-1]['tanggal'][:10]}  n={len(g):>2}  "
-              f"jangkauan med {j:>5.0f}  skip med {(f'{s:.1f}%' if s else '—')}")
+              f"jangkauan med {j:>5.0f}  skip med {(f'{s:.1f}%' if s is not None else '—')}")
     jl, jb = med(lama, "reach"), med(baru, "reach")
     sl, sb = med(lama, "skip"), med(baru, "skip")
-    if jl and jb:
+    if jl is not None and jb is not None and jl != 0:
         d = (jb - jl) / jl * 100
         arah = "MEMBAIK" if d > 0 else "MEMBURUK"
         print(f"\n  → Jangkauan {arah}: {jl:.0f} → {jb:.0f} ({d:+.1f}%)")
-    if sl and sb:
+    if sl is not None and sb is not None:
         # skip KECIL = bagus, jadi turun = membaik
         arah = "MEMBAIK" if sb < sl else "MEMBURUK"
         print(f"  → Mutu hook {arah}: skip {sl:.1f}% → {sb:.1f}% "
@@ -158,7 +162,7 @@ def main() -> None:
                   f"jangkauan {r['reach']:>4} (belum final)  {(r.get('judul') or '')[:34]}")
         s_muda = med(muda, "skip")
         s_matang = med(matang, "skip")
-        if s_muda and s_matang:
+        if s_muda is not None and s_matang is not None:
             beda = s_muda - s_matang
             if beda < -5:
                 print(f"\n  ✅ Hook post terbaru JAUH LEBIH BAIK: skip {s_muda:.1f}% "
