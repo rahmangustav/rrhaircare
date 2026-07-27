@@ -412,28 +412,40 @@ export async function updateOrderByCode(code, patch) {
   await writeJSON('orders', list); return list[i];
 }
 
+// Fungsi murni: apakah SATU order (snapshot terkini) masih perlu dibatalkan
+// otomatis + stoknya dikembalikan SEKARANG. Dipisah dari I/O supaya bisa
+// dites, dan supaya tiap order dicek ulang terhadap bacaan TERBARU tepat
+// sebelum ditulis (lihat pemakaiannya di expireStaleOrders).
+export function isOrderStillExpirable(order, now) {
+  return !!order && order.status === 'menunggu_pembayaran' && !order.stockReturned &&
+    (now - (order.createdAt || 0)) > ORDER_HOLD_MS;
+}
+
 // Batalkan otomatis order yang telat bayar & kembalikan stoknya.
-// Dipanggil "lazy" saat daftar order dibaca / order baru dibuat.
+// Dipanggil "lazy" saat daftar order dibaca / order baru dibuat — dari dua
+// jalur berbeda (orders.js saat checkout, admin-orders.js saat admin buka
+// daftar pesanan). Netlify Blobs di sini tidak punya compare-and-swap, jadi
+// dua invocation yang nyaris bersamaan bisa sama-sama membaca order yang sama
+// sebagai "belum stockReturned". Diproses SATU order per satu, baca ulang
+// TEPAT sebelum menandai+menulis (bukan satu baca+tulis borongan di awal) —
+// mempersempit jendela itu, sama seperti pola reserveStockFor di atas. Tanpa
+// ini, invocation kedua bisa mengembalikan stok order yang sama dua kali
+// (stok tercatat lebih besar dari kenyataan -> berpotensi oversell).
 export async function expireStaleOrders() {
-  const list = await getOrders();
   const now = Date.now();
-  const toRestore = [];
-  let changed = false;
-  for (const o of list) {
-    if (o.status === 'menunggu_pembayaran' && !o.stockReturned &&
-        (now - (o.createdAt || 0)) > ORDER_HOLD_MS) {
-      o.status = 'batal';
-      o.stockReturned = true;
-      o.autoCanceled = true;
-      if (Array.isArray(o.items)) toRestore.push(...o.items);
-      changed = true;
-    }
+  let current = await getOrders();
+  const staleIds = current.filter(o => isOrderStillExpirable(o, now)).map(o => o.id);
+  for (const id of staleIds) {
+    current = await getOrders();
+    const o = current.find(x => x.id === id);
+    if (!isOrderStillExpirable(o, now)) continue; // invocation lain sudah menanganinya
+    o.status = 'batal';
+    o.stockReturned = true;
+    o.autoCanceled = true;
+    await writeJSON('orders', current);
+    if (Array.isArray(o.items)) await restoreStockFor(o.items);
   }
-  if (changed) {
-    await writeJSON('orders', list);
-    await restoreStockFor(toRestore);
-  }
-  return list;
+  return current;
 }
 
 // ── Analitik pengunjung (dihitung sendiri via Blobs) ──
