@@ -724,6 +724,19 @@ export async function deleteMediaByUrl(url) {
   try { await media().delete(key); } catch { /* best-effort */ }
 }
 
+// ── Validasi password baru admin ──
+// Form admin (admin.js) sudah mengecek "minimal 6 karakter" di browser sebelum
+// mengirim — tapi itu cuma UX, bukan penjaga sesungguhnya. /api/admin/settings
+// dulu menerima newPassword apa adanya (hanya dicek truthy) dan langsung
+// di-hash, jadi panggilan langsung ke API (curl/devtools dengan token admin
+// yang sudah didapat) bisa mengganti password jadi satu karakter atau spasi
+// tunggal — melemahkan satu-satunya pintu masuk panel admin (harga, stok,
+// pesanan) untuk seterusnya. Dipisah jadi fungsi murni supaya bisa dites.
+export const MIN_ADMIN_PASSWORD_LENGTH = 6;
+export function isValidNewPassword(pw) {
+  return typeof pw === 'string' && pw.trim().length >= MIN_ADMIN_PASSWORD_LENGTH;
+}
+
 // ── Helper HTTP ──
 export const json = (data, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json' } });
