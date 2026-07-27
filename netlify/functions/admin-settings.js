@@ -20,6 +20,10 @@ export default async (req) => {
       oldQris = (await getSettings()).qrisImage;
       try { patch.qrisImage = await saveMedia(b.qrisData); }
       catch (e) { return json({ error: 'Ukuran gambar terlalu besar (maks 4 MB)' }, 413); }
+      // saveMedia() balikin '' (bukan throw) kalau format tak didukung — tanpa
+      // guard ini, patch.qrisImage jadi '' (beda dari oldQris) dan baris di
+      // bawah menghapus QRIS lama padahal upload baru gagal total.
+      if (!patch.qrisImage) return json({ error: 'Format gambar tidak didukung (pakai JPG/PNG/WEBP/GIF)' }, 400);
     }
     if (b.newPassword) patch.adminPassword = hashPassword(b.newPassword);
     const { adminPassword, authSecret, ...rest } = await saveSettings(patch);
