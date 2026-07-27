@@ -24,6 +24,13 @@ export function verifyPassword(pw, stored) {
   const target = Buffer.from(hash, 'hex');
   return test.length === target.length && timingSafeEqual(test, target);
 }
+// Password default ("admin123") dipakai saat blob `settings` pertama kali
+// dibuat (lihat getSettings di bawah) dan didokumentasikan publik di
+// DEPLOY.md/PANDUAN.md — siapa pun yang baca repo tahu nilainya. Dipakai
+// admin-settings.js untuk memberi peringatan sampai admin menggantinya.
+export function isDefaultPassword(settings) {
+  return verifyPassword('admin123', settings.adminPassword);
+}
 
 // ── Pembatas percobaan login (anti brute-force, per IP via Blobs) ──
 const LOGIN_MAX_FAILS = 5;            // gagal berturut sebelum dikunci
