@@ -49,10 +49,19 @@ def main():
     apply = "--apply" in sys.argv
     batas = 3
     if "--batas" in sys.argv:
-        batas = int(sys.argv[sys.argv.index("--batas") + 1])
+        i = sys.argv.index("--batas")
+        if i + 1 >= len(sys.argv):
+            sys.exit("--batas butuh nilai, mis. --batas 5")
+        try:
+            batas = int(sys.argv[i + 1])
+        except ValueError:
+            sys.exit(f"--batas harus angka, dapat: {sys.argv[i + 1]!r}")
     privasi = "public"
     if "--privasi" in sys.argv:
-        privasi = sys.argv[sys.argv.index("--privasi") + 1]
+        i = sys.argv.index("--privasi")
+        if i + 1 >= len(sys.argv):
+            sys.exit("--privasi butuh nilai, mis. --privasi unlisted")
+        privasi = sys.argv[i + 1]
 
     with open(MANIFEST) as f:
         m = json.load(f)
