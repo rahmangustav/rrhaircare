@@ -63,7 +63,13 @@ def creds():
 def id_video_terbaru(yt) -> list:
     """Semua id video dari playlist uploads channel — SEGAR, bukan snapshot."""
     ch = yt.channels().list(part="contentDetails", mine=True).execute()
-    uploads = ch["items"][0]["contentDetails"]["relatedPlaylists"]["uploads"]
+    items = ch.get("items", [])
+    if not items:
+        raise SystemExit(
+            "❌ Login sukses tapi akun token.json ini tidak punya channel YouTube "
+            "(items kosong). Cek apakah token dibuat dari akun Google yang benar."
+        )
+    uploads = items[0]["contentDetails"]["relatedPlaylists"]["uploads"]
     ids, token = [], None
     while True:
         r = yt.playlistItems().list(
