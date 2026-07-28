@@ -31,14 +31,26 @@ def creds():
     return c
 
 
+def ambil_channel(yt) -> dict:
+    """Data channel milik akun token.json ini — cuma satu per akun."""
+    r = (
+        yt.channels()
+        .list(part="snippet,statistics,contentDetails,brandingSettings,status", mine=True)
+        .execute()
+    )
+    items = r.get("items", [])
+    if not items:
+        raise SystemExit(
+            "❌ Login sukses tapi akun token.json ini tidak punya channel YouTube "
+            "(items kosong). Cek apakah token dibuat dari akun Google yang benar."
+        )
+    return items[0]
+
+
 def main():
     yt = build("youtube", "v3", credentials=creds())
 
-    ch = (
-        yt.channels()
-        .list(part="snippet,statistics,contentDetails,brandingSettings,status", mine=True)
-        .execute()["items"][0]
-    )
+    ch = ambil_channel(yt)
     uploads = ch["contentDetails"]["relatedPlaylists"]["uploads"]
 
     video_ids, page = [], None
