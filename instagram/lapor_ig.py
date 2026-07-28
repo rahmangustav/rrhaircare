@@ -64,6 +64,17 @@ def jenis(m: dict) -> str:
     return "Foto"
 
 
+def parse_insight_values(data: list) -> dict:
+    """Ambil {metric: value} dari respons /insights.
+
+    Graph API kadang membalas metrik dengan "values": [] kosong (bukan
+    metrik yang hilang dari "data" sama sekali) — mis. insight Reel yang
+    baru saja diunggah dan datanya belum siap. Metrik begitu dilewati saja
+    supaya satu insight yang belum siap tidak menggagalkan seluruh laporan.
+    """
+    return {d["name"]: d["values"][0]["value"] for d in data if d.get("values")}
+
+
 def kumpulkan(token: str, jumlah: int) -> list:
     fields = "id,caption,media_type,permalink,timestamp,like_count,comments_count"
     media, after = [], None
@@ -84,7 +95,7 @@ def kumpulkan(token: str, jumlah: int) -> list:
         if jenis(m) == "Reel":
             metrik += ",reels_skip_rate"  # cuma ada di Reel
         ins = get(token, f"{m['id']}/insights", metric=metrik)
-        nilai = {d["name"]: d["values"][0]["value"] for d in ins.get("data", [])}
+        nilai = parse_insight_values(ins.get("data", []))
         cap = (m.get("caption") or "").replace("\n", " ")
         hasil.append({
             "id": m["id"],
