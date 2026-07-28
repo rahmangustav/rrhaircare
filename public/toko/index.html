@@ -72,7 +72,7 @@ function renderGrid(){
   if(!list.length){ grid.innerHTML = '<div class="empty">Tidak ada produk di kategori ini.</div>'; return; }
   grid.innerHTML = list.map(p => {
     const habis = p.stock <= 0;
-    const img = p.image ? `<img src="${p.image}" alt="${esc(p.name)}"/>` : `<div class="ph"><i class="fa-solid fa-bottle-droplet"></i></div>`;
+    const img = p.image ? `<img src="${p.image}" alt="${esc(p.name)}" loading="lazy"/>` : `<div class="ph"><i class="fa-solid fa-bottle-droplet"></i></div>`;
     return `<div class="card">
       <div class="thumb">${img}</div>
       <div class="body">
