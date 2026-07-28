@@ -60,9 +60,22 @@ def cek_kuota(e: HttpError):
     raise e
 
 
+def _channel_pertama(items: list) -> dict:
+    """Item channel pertama dari respons API — items bisa kosong kalau token.json
+    login ke akun Google yang tidak punya channel YouTube (lihat PR #95/#82)."""
+    if not items:
+        raise SystemExit(
+            "❌ Login sukses tapi akun token.json ini tidak punya channel YouTube "
+            "(items kosong). Cek apakah token dibuat dari akun Google yang benar."
+        )
+    return items[0]
+
+
 # ---- channel dulu (paling terlihat, murah) ----
 try:
-    ch = yt.channels().list(mine=True, part="brandingSettings").execute()["items"][0]
+    ch = _channel_pertama(
+        yt.channels().list(mine=True, part="brandingSettings").execute().get("items", [])
+    )
 except HttpError as e:
     cek_kuota(e)
 b = ch["brandingSettings"]["channel"]
@@ -86,8 +99,10 @@ else:
 
 # ---- semua video publik ----
 try:
-    uploads = yt.channels().list(mine=True, part="contentDetails").execute()[
-        "items"][0]["contentDetails"]["relatedPlaylists"]["uploads"]
+    ch2 = _channel_pertama(
+        yt.channels().list(mine=True, part="contentDetails").execute().get("items", [])
+    )
+    uploads = ch2["contentDetails"]["relatedPlaylists"]["uploads"]
     vids, page = [], None
     while True:
         r = yt.playlistItems().list(playlistId=uploads, part="contentDetails",

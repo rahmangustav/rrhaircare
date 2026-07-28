@@ -68,10 +68,22 @@ def creds():
     return c
 
 
+def ambil_channel(yt, part: str) -> dict:
+    """Channel milik akun token.json ini — cuma satu per akun."""
+    r = yt.channels().list(part=part, mine=True).execute()
+    items = r.get("items", [])
+    if not items:
+        raise SystemExit(
+            "❌ Login sukses tapi akun token.json ini tidak punya channel YouTube "
+            "(items kosong). Cek apakah token dibuat dari akun Google yang benar."
+        )
+    return items[0]
+
+
 def main():
     yt = build("youtube", "v3", credentials=creds())
 
-    ch = yt.channels().list(part="contentDetails", mine=True).execute()["items"][0]
+    ch = ambil_channel(yt, "contentDetails")
     up = ch["contentDetails"]["relatedPlaylists"]["uploads"]
 
     ids, tok = [], None
@@ -92,7 +104,7 @@ def main():
 
     # Deskripsi CHANNEL — link paling sering diklik (tampil di halaman kanal),
     # jadi jangan sampai terlewat seperti pada pass pertama 18 Jul.
-    chd = yt.channels().list(part="brandingSettings", mine=True).execute()["items"][0]
+    chd = ambil_channel(yt, "brandingSettings")
     kanal_lama = chd["brandingSettings"]["channel"].get("description", "")
     kanal_baru = tandai(kanal_lama)
     if kanal_baru != kanal_lama:
