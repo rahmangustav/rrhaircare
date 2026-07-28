@@ -25,5 +25,21 @@ function isSlotPast(tanggal, jamRange, nowMs) {
   return nowMin >= startMin;
 }
 
+// Format 'YYYY-MM-DD' (nilai mentah <input type=date>) jadi "Rabu, 5 Agustus 2026"
+// TANPA lewat Date+toLocaleDateString langsung — `new Date('YYYY-MM-DD')` diparse
+// sebagai UTC tengah malam, lalu toLocaleDateString memformatnya di zona waktu
+// LOKAL perangkat pengunjung. Untuk pengunjung di zona sebelah barat UTC (mis.
+// Amerika, WIB pun +7 jadi aman, tapi diaspora yang booking dari luar negeri
+// tidak), tanggal yang tampil di pesan WhatsApp mundur satu hari dari yang
+// benar-benar dipilih di form. Dibangun dari komponen Y/M/D lokal (bukan parse
+// string ISO) supaya tanggal yang tampil selalu SAMA dengan yang dipilih,
+// apa pun zona waktu perangkat pengunjung.
+function formatTanggalBooking(tanggal, locale) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(tanggal || '');
+  if (!m) return tanggal || '';
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  return d.toLocaleDateString(locale || 'id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+}
+
 (typeof window !== 'undefined' ? window : globalThis).BookingTime =
-  { todayWIB, slotStartMinutes, isSlotPast };
+  { todayWIB, slotStartMinutes, isSlotPast, formatTanggalBooking };
