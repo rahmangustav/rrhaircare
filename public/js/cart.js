@@ -36,7 +36,7 @@ const Cart = (() => {
     }
     if (footer) footer.style.display = 'block';
     box.innerHTML = items.map(i => {
-      const thumb = i.image ? `<img class="ci-thumb" src="${i.image}"/>` : `<div class="ci-thumb" style="display:flex;align-items:center;justify-content:center;color:var(--blush)"><i class="fa-solid fa-bottle-droplet"></i></div>`;
+      const thumb = i.image ? `<img class="ci-thumb" src="${i.image}" alt="${esc(i.name)}" loading="lazy"/>` : `<div class="ci-thumb" style="display:flex;align-items:center;justify-content:center;color:var(--blush)"><i class="fa-solid fa-bottle-droplet"></i></div>`;
       return `<div class="cart-item">${thumb}
         <div class="ci-info">
           <h4>${esc(i.name)}</h4>
