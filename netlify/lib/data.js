@@ -304,16 +304,26 @@ export function sanitizeCustomer(customer) {
   };
 }
 
-// Kembalikan stok produk untuk daftar item pesanan.
-async function restoreStockFor(items) {
-  if (!Array.isArray(items) || !items.length) return;
-  const products = await getProducts();
+// Tambahkan kembali stok ke snapshot produk yang diberikan (kebalikan dari
+// applyStockReservation). Dipisah dari I/O Blobs supaya bisa diuji sebagai
+// fungsi murni, mengikuti pola applyStockReservation di atas.
+export function applyStockRestore(products, items) {
   let touched = false;
   for (const it of items) {
     const p = products.find(x => x.id === it.id);
     if (p) { p.stock = (Number(p.stock) || 0) + (Number(it.qty) || 0); touched = true; }
   }
-  if (touched) await saveProducts(products);
+  return touched;
+}
+// Kembalikan stok produk untuk daftar item pesanan. Dipakai baik saat order
+// dibatalkan (applyStockTransition) maupun saat orders.js gagal MENYIMPAN
+// order setelah stoknya sudah kadung dipotong reserveStockFor (lihat
+// orders.js) — tanpa ini, stok yang sudah terpotong hilang permanen karena
+// tidak ada order yang tercatat untuk memicu pengembaliannya.
+export async function restoreStockFor(items) {
+  if (!Array.isArray(items) || !items.length) return;
+  const products = await getProducts();
+  if (applyStockRestore(products, items)) await saveProducts(products);
 }
 // Potong ulang stok (dipakai kalau order batal diaktifkan lagi oleh admin).
 async function deductStockFor(items) {

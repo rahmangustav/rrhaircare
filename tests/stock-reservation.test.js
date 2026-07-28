@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { applyStockReservation } from '../netlify/lib/data.js';
+import { applyStockReservation, applyStockRestore } from '../netlify/lib/data.js';
 
 // Bug yang diperbaiki: orders.js dulu mengecek stok dari satu snapshot `products`
 // lalu, di akhir request yang sama, menulis kembali pengurangan dari snapshot itu
@@ -93,4 +93,64 @@ test('item duplikat untuk id yang sama, total masih cukup -> digabung dan dikura
   const short = applyStockReservation(products, [{ id: 'p1', qty: 2 }, { id: 'p1', qty: 3 }]);
   assert.deepEqual(short, []);
   assert.equal(products[0].stock, 0, 'total qty duplikat (5) dikurangi sekali dari stok (5)');
+});
+
+// Bug yang diperbaiki: orders.js memotong stok lewat reserveStockFor LALU BARU
+// menulis order-nya lewat addOrder(). Kalau addOrder() gagal (mis. Blobs error/
+// timeout sesaat) setelah stok sudah kadung terpotong, sebelumnya tidak ada
+// mekanisme pengembalian sama sekali -- order tak pernah tercatat, jadi tidak
+// ada apa pun untuk dipicu expireStaleOrders(); stok yang terpotong hilang
+// permanen. Perbaikan: orders.js sekarang memanggil restoreStockFor() di
+// catch-block-nya. applyStockRestore adalah inti murni dari pengembaliannya
+// (dipakai restoreStockFor), mengikuti pola applyStockReservation di atas.
+test('restore: stok item dikembalikan sesuai qty', () => {
+  const products = [{ id: 'p1', stock: 3 }];
+  const touched = applyStockRestore(products, [{ id: 'p1', qty: 2 }]);
+  assert.equal(touched, true);
+  assert.equal(products[0].stock, 5);
+});
+
+test('restore: item duplikat untuk id yang sama masing-masing menambah (bukan menggantikan)', () => {
+  const products = [{ id: 'p1', stock: 0 }];
+  applyStockRestore(products, [{ id: 'p1', qty: 2 }, { id: 'p1', qty: 3 }]);
+  assert.equal(products[0].stock, 5);
+});
+
+test('restore: multi-item, hanya produk yang ada di snapshot yang tersentuh', () => {
+  const products = [{ id: 'p1', stock: 2 }, { id: 'p2', stock: 1 }];
+  const touched = applyStockRestore(products, [{ id: 'p1', qty: 1 }, { id: 'hilang', qty: 5 }]);
+  assert.equal(touched, true);
+  assert.equal(products[0].stock, 3);
+  assert.equal(products[1].stock, 1, 'produk yang tak disebut di items tidak boleh ikut berubah');
+});
+
+test('restore: qty non-angka/kosong diperlakukan sebagai 0 (tidak crash)', () => {
+  const products = [{ id: 'p1', stock: 4 }];
+  applyStockRestore(products, [{ id: 'p1', qty: 'abc' }]);
+  assert.equal(products[0].stock, 4);
+});
+
+test('restore: tidak ada item yang cocok -> touched=false, snapshot tidak berubah', () => {
+  const products = [{ id: 'p1', stock: 4 }];
+  const touched = applyStockRestore(products, [{ id: 'lain', qty: 3 }]);
+  assert.equal(touched, false);
+  assert.equal(products[0].stock, 4);
+});
+
+test('simulasi: reserve lalu addOrder gagal -> restore mengembalikan stok ke nilai semula', () => {
+  const store = [{ id: 'p1', stock: 5 }];
+
+  // 1) reserveStockFor: potong stok untuk order baru.
+  const reserveSnapshot = store.map(p => ({ ...p }));
+  const short = applyStockReservation(reserveSnapshot, [{ id: 'p1', qty: 2 }]);
+  assert.deepEqual(short, []);
+  store[0].stock = reserveSnapshot[0].stock; // simulasi saveProducts
+  assert.equal(store[0].stock, 3, 'stok sudah terpotong sebelum addOrder dipanggil');
+
+  // 2) addOrder() gagal -> orders.js memanggil restoreStockFor(orderItems).
+  const restoreSnapshot = store.map(p => ({ ...p }));
+  applyStockRestore(restoreSnapshot, [{ id: 'p1', qty: 2 }]);
+  store[0].stock = restoreSnapshot[0].stock; // simulasi saveProducts
+
+  assert.equal(store[0].stock, 5, 'stok harus kembali ke nilai semula, tidak boleh bocor');
 });
