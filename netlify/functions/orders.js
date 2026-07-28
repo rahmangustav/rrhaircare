@@ -1,5 +1,6 @@
 import { getProducts, getSettings, addOrder, expireStaleOrders,
-  orderRateStatus, noteOrderCreated, reserveStockFor, resolveShipping, sanitizeCustomer, json } from '../lib/data.js';
+  orderRateStatus, noteOrderCreated, reserveStockFor, restoreStockFor,
+  resolveShipping, sanitizeCustomer, json } from '../lib/data.js';
 
 export default async (req, context) => {
   if (req.method !== 'POST') return json({ error: 'Method tidak didukung' }, 405);
@@ -45,12 +46,22 @@ export default async (req, context) => {
     return json({ error: 'Maaf, stok baru saja habis untuk salah satu produk. Coba pesan ulang.' }, 409);
   }
 
-  const order = await addOrder({
-    items: orderItems, subtotal, shipping: { label: ship.label, price: ship.price },
-    total: subtotal + ship.price,
-    customer: sanitizeCustomer(customer),
-    paymentProof: ''
-  });
+  // Stok di atas sudah dipotong (reserveStockFor). Kalau penulisan order-nya
+  // sendiri gagal (mis. Blobs error/timeout sesaat), stok yang sudah
+  // terpotong harus dikembalikan — kalau tidak, produk "kehabisan stok" untuk
+  // order yang sebenarnya tak pernah tercatat sama sekali.
+  let order;
+  try {
+    order = await addOrder({
+      items: orderItems, subtotal, shipping: { label: ship.label, price: ship.price },
+      total: subtotal + ship.price,
+      customer: sanitizeCustomer(customer),
+      paymentProof: ''
+    });
+  } catch (err) {
+    await restoreStockFor(orderItems);
+    throw err;
+  }
   await noteOrderCreated(ip);
   return json({ ok: true, code: order.code, id: order.id, total: order.total });
 };
