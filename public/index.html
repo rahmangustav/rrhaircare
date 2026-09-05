@@ -393,34 +393,6 @@
       details.price-cat { padding: 0 14px; }
     }
 
-    /* ── TESTIMONIALS ── */
-    #testimoni { background: var(--charcoal); }
-    #testimoni .section-title { color: var(--ivory); }
-    #testimoni .section-sub { color: rgba(255,255,255,0.45); }
-    .testi-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr);
-      gap: 2px; background: var(--line);
-      max-width: 1080px; margin: 0 auto;
-    }
-    .testi-card {
-      background: #222; padding: 40px 32px;
-    }
-    .testi-text {
-      font-family: var(--serif);
-      font-size: 1.05rem;
-      font-weight: 300; color: var(--ivory);
-      line-height: 1.7; margin-bottom: 24px;
-    }
-    .testi-author { display: flex; align-items: center; gap: 12px; }
-    .testi-name {
-      font-size: 0.8rem; font-weight: 500;
-      color: var(--ivory); letter-spacing: 0.05em;
-    }
-    .testi-loc {
-      font-size: 0.7rem; color: rgba(255,255,255,0.4);
-      margin-top: 2px;
-    }
-
     /* ── BOOKING ── */
     #booking { background: var(--soft-white); }
     .booking-inner {
@@ -636,7 +608,6 @@
       .hero-card { max-width: 100%; }
       .services-grid { grid-template-columns: repeat(2, 1fr); }
       .about-inner { grid-template-columns: 1fr; }
-      .testi-grid { grid-template-columns: 1fr; }
       .footer-inner { grid-template-columns: 1fr; gap: 36px; }
       .map-info { grid-template-columns: 1fr; }
       .karir-grid { grid-template-columns: 1fr; }
@@ -765,7 +736,6 @@
     <li><a href="#tentang-kami">Tentang Kami</a></li>
     <li><a href="#galeri">Galeri</a></li>
     <li><a href="#harga">Harga</a></li>
-    <li><a href="#testimoni">Testimoni</a></li>
     <li><a href="#karir">Karir</a></li>
     <li><a href="#lokasi">Lokasi</a></li>
     <li><a href="/toko">Belanja</a></li>
@@ -780,7 +750,6 @@
   <a href="#tentang-kami" onclick="toggleMenu()">Tentang Kami</a>
   <a href="#galeri" onclick="toggleMenu()">Galeri</a>
   <a href="#harga" onclick="toggleMenu()">Harga</a>
-  <a href="#testimoni" onclick="toggleMenu()">Testimoni</a>
   <a href="#karir" onclick="toggleMenu()">Karir</a>
   <a href="#lokasi" onclick="toggleMenu()">Lokasi</a>
   <a href="/toko" onclick="toggleMenu()">Belanja</a>
@@ -933,40 +902,6 @@
   <p class="section-sub">Semua 79 layanan, apa adanya. Kalau ada promo berjalan, tertulis di barisnya.</p>
   <div class="price-wrap fade-up" id="priceWrap">
     <p class="price-loading">Memuat daftar harga…</p>
-  </div>
-</section>
-
-<!-- TESTIMONI -->
-<section id="testimoni">
-  <h2 class="section-title">Kata pelanggan</h2>
-  <div class="testi-grid fade-up">
-    <div class="testi-card">
-      <p class="testi-text">"Hasil smoothing-nya luar biasa! Rambut aku jadi jauh lebih lembut dan berkilau. Stylist-nya juga sangat profesional dan ramah. Pasti balik lagi!"</p>
-      <div class="testi-author">
-        <div>
-          <div class="testi-name">Aulia Rahmadani</div>
-          <div class="testi-loc">Koja, Jakarta Utara</div>
-        </div>
-      </div>
-    </div>
-    <div class="testi-card">
-      <p class="testi-text">"Facial-nya bikin kulit aku glowing banget! Suasana salonnya nyaman dan bersih. Harganya juga terjangkau untuk kualitas segini. Sangat recommend!"</p>
-      <div class="testi-author">
-        <div>
-          <div class="testi-name">Dinda Permatasari</div>
-          <div class="testi-loc">Tanjung Priok, Jakarta Utara</div>
-        </div>
-      </div>
-    </div>
-    <div class="testi-card">
-      <p class="testi-text">"Suka banget sama hasilnya! Potong rambut sesuai keinginan aku persis. Mas/Mba stylist-nya sabar mendengarkan dan hasilnya melebihi ekspektasi."</p>
-      <div class="testi-author">
-        <div>
-          <div class="testi-name">Sari Wulandari</div>
-          <div class="testi-loc">Penjaringan, Jakarta Utara</div>
-        </div>
-      </div>
-    </div>
   </div>
 </section>
 
@@ -1146,7 +1081,6 @@
         <li><a href="#layanan">Layanan</a></li>
         <li><a href="#tentang-kami">Tentang Kami</a></li>
         <li><a href="#galeri">Galeri</a></li>
-        <li><a href="#testimoni">Testimoni</a></li>
         <li><a href="#karir">Karir</a></li>
         <li><a href="#lokasi">Lokasi</a></li>
       </ul>

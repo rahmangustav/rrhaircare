@@ -15,12 +15,25 @@
     }).join('');
   }).catch(function () {});
 
-  // Foto tetap per bagian halaman (mis. slot "about" = Foto Rani & Ratih)
-  fetch('/api/site-images').then(function (r) { return r.json(); }).then(function (imgs) {
-    if (!imgs || typeof imgs !== 'object') return;
+  // Foto tetap per bagian halaman (mis. slot "about" = Foto Rani & Ratih).
+  // Slot yang belum diisi tidak boleh tampil sebagai kotak kosong: hero pinjam
+  // foto galeri terbaru, kartu layanan menyembunyikan area fotonya.
+  Promise.all([
+    fetch('/api/site-images').then(function (r) { return r.json(); }).catch(function () { return {}; }),
+    fetch('/api/gallery').then(function (r) { return r.json(); }).catch(function () { return []; })
+  ]).then(function (hasil) {
+    var imgs = hasil[0] && typeof hasil[0] === 'object' ? hasil[0] : {};
+    var galeri = Array.isArray(hasil[1]) ? hasil[1] : [];
+    var pasang = function (el, url, alt) {
+      el.innerHTML = '<img src="' + esc(url) + '" alt="' + esc(alt) + '" loading="lazy"/>';
+    };
     document.querySelectorAll('[data-slot]').forEach(function (el) {
-      var url = imgs[el.getAttribute('data-slot')];
-      if (url) el.innerHTML = '<img src="' + esc(url) + '" alt="RR Hair Care" loading="lazy"/>';
+      var slot = el.getAttribute('data-slot');
+      if (imgs[slot]) return pasang(el, imgs[slot], 'RR Hair Care');
+      if (slot === 'hero' && galeri.length) {
+        return pasang(el, galeri[0].image, galeri[0].caption || 'Hasil kerja RR Hair Care');
+      }
+      if (el.classList.contains('service-photo')) el.remove();
     });
-  }).catch(function () {});
+  });
 })();
