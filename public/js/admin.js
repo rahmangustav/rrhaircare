@@ -310,7 +310,14 @@ async function delGalleryPhoto(id){
 // ── Foto Bagian Halaman (slot tetap) ──
 // Daftar slot yang bisa diganti fotonya. Tambah entri di sini untuk slot baru.
 const SITE_IMG_SLOTS = [
-  { key:'about', label:'“Kisah di Balik RR Hair Care” — Foto Rani & Ratih' }
+  { key:'hero',              label:'Halaman depan — foto besar paling atas', ratio:'4/5' },
+  { key:'about',             label:'“Dua kakak beradik” — foto Rani & Ratih', ratio:'3/4' },
+  { key:'layanan-haircut',   label:'Kartu layanan — Potong Rambut',          ratio:'3/2' },
+  { key:'layanan-coloring',  label:'Kartu layanan — Coloring & Highlight',   ratio:'3/2' },
+  { key:'layanan-smoothing', label:'Kartu layanan — Smoothing & Rebonding',  ratio:'3/2' },
+  { key:'layanan-hairspa',   label:'Kartu layanan — Hair Spa & Treatment',   ratio:'3/2' },
+  { key:'layanan-nailart',   label:'Kartu layanan — Nail Art',               ratio:'3/2' },
+  { key:'layanan-paket',     label:'Kartu layanan — Paket Hemat',            ratio:'3/2' }
 ];
 async function loadSiteImages(){
   let imgs;
@@ -319,8 +326,8 @@ async function loadSiteImages(){
   box.innerHTML = SITE_IMG_SLOTS.map(s=>{
     const url = imgs[s.key];
     const preview = url
-      ? `<div style="aspect-ratio:3/4;max-height:220px;overflow:hidden;border-radius:10px;border:1px solid var(--line)"><img src="${url}" style="width:100%;height:100%;object-fit:cover"/></div>`
-      : `<div style="aspect-ratio:3/4;max-height:220px;display:flex;align-items:center;justify-content:center;border-radius:10px;border:1px dashed var(--line);color:var(--muted);font-size:.8rem">Belum ada foto</div>`;
+      ? `<div style="aspect-ratio:${s.ratio||'3/4'};max-height:220px;overflow:hidden;border-radius:10px;border:1px solid var(--line)"><img src="${url}" style="width:100%;height:100%;object-fit:cover"/></div>`
+      : `<div style="aspect-ratio:${s.ratio||'3/4'};max-height:220px;display:flex;align-items:center;justify-content:center;border-radius:10px;border:1px dashed var(--line);color:var(--muted);font-size:.8rem">Belum ada foto</div>`;
     return `<div>
       <div style="font-size:.82rem;font-weight:600;margin-bottom:8px">${esc(s.label)}</div>
       ${preview}

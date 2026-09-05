@@ -50,6 +50,22 @@
         '</details>';
     }).join('');
 
+    // Kartu layanan di section atas ikut memakai angka asli: jumlah layanan
+    // dan harga termurah per kategori. Sekali harga diubah di admin, teks di
+    // kartu ikut berubah — tidak ada angka yang perlu disunting manual.
+    document.querySelectorAll('.service-card[data-kategori]').forEach(function (card) {
+      var items = groups[card.getAttribute('data-kategori')];
+      var meta = card.querySelector('.service-meta');
+      if (!meta || !items || !items.length) return;
+      var murah = Infinity;
+      items.forEach(function (it) {
+        var v = (it.promo && it.promo < it.price) ? it.promo : it.price;
+        if (v && v < murah) murah = v;
+      });
+      meta.textContent = items.length + ' layanan'
+        + (murah < Infinity ? ' · mulai ' + rupiah(murah) : '');
+    });
+
     // Isi dropdown Layanan di form Booking (nama + harga), kelompok per kategori.
     var sel = document.getElementById('layanan-select');
     if (sel) {
