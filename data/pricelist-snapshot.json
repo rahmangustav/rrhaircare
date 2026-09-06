@@ -1,0 +1,634 @@
+[
+  {
+    "id": "h_mrg6buui862393",
+    "category": "Paket Layanan",
+    "name": "Paket 1",
+    "price": 160000,
+    "promo": 0,
+    "duration": ""
+  },
+  {
+    "id": "h_mrg6buuj3e52c0",
+    "category": "Paket Layanan",
+    "name": "Paket 2",
+    "price": 190000,
+    "promo": 0,
+    "duration": ""
+  },
+  {
+    "id": "h_mrg6buuj8bbbe3",
+    "category": "Paket Layanan",
+    "name": "Paket 3",
+    "price": 140000,
+    "promo": 0,
+    "duration": ""
+  },
+  {
+    "id": "h_mrg6buujddb1ca",
+    "category": "Paket Layanan",
+    "name": "Paket 4",
+    "price": 120000,
+    "promo": 0,
+    "duration": ""
+  },
+  {
+    "id": "h_mrg6buuj696341",
+    "category": "Paket Layanan",
+    "name": "Paket 6",
+    "price": 150000,
+    "promo": 0,
+    "duration": ""
+  },
+  {
+    "id": "h_mrg6buuj2312ca",
+    "category": "Paket Layanan",
+    "name": "Paket 7",
+    "price": 160000,
+    "promo": 0,
+    "duration": ""
+  },
+  {
+    "id": "h_mrg6buuj4e16db",
+    "category": "Paket Layanan",
+    "name": "Paket 5",
+    "price": 150000,
+    "promo": 0,
+    "duration": ""
+  },
+  {
+    "id": "h_mrg6buuj73a8ec",
+    "category": "Paket Layanan",
+    "name": "Paket 8",
+    "price": 140000,
+    "promo": 0,
+    "duration": ""
+  },
+  {
+    "id": "h_mrg6buujad1885",
+    "category": "Paket Layanan",
+    "name": "Paket 9",
+    "price": 180000,
+    "promo": 0,
+    "duration": ""
+  },
+  {
+    "id": "h_mrg6buumc09c08",
+    "category": "Paket Layanan",
+    "name": "Paket 10",
+    "price": 150000,
+    "promo": 0,
+    "duration": ""
+  },
+  {
+    "id": "h_mrg6buun7ac6e3",
+    "category": "Paket Layanan",
+    "name": "Paket 11",
+    "price": 145000,
+    "promo": 0,
+    "duration": ""
+  },
+  {
+    "id": "h_mrg6buun7de4c7",
+    "category": "Paket Layanan",
+    "name": "Paket 12",
+    "price": 160000,
+    "promo": 0,
+    "duration": ""
+  },
+  {
+    "id": "h_mrg6buune46ee7",
+    "category": "Paket Layanan",
+    "name": "Paket 13",
+    "price": 210000,
+    "promo": 0,
+    "duration": ""
+  },
+  {
+    "id": "h_mrg6buun5d902c",
+    "category": "Paket Layanan",
+    "name": "Paket A",
+    "price": 105000,
+    "promo": 0,
+    "duration": ""
+  },
+  {
+    "id": "h_mrg6buunbdf02f",
+    "category": "Paket Layanan",
+    "name": "Paket B",
+    "price": 105000,
+    "promo": 0,
+    "duration": ""
+  },
+  {
+    "id": "h_mrg6buupa87413",
+    "category": "Paket Layanan",
+    "name": "Paket C",
+    "price": 100000,
+    "promo": 0,
+    "duration": ""
+  },
+  {
+    "id": "h_mrg6buup0a8cdb",
+    "category": "Paket Layanan",
+    "name": "Paket D",
+    "price": 100000,
+    "promo": 0,
+    "duration": ""
+  },
+  {
+    "id": "h_mrg6buuq156176",
+    "category": "Paket Layanan",
+    "name": "Paket E",
+    "price": 110000,
+    "promo": 0,
+    "duration": ""
+  },
+  {
+    "id": "h_mrg6buuqc351d3",
+    "category": "Blow & Styling",
+    "name": "Hair Styling (Catok)",
+    "price": 35000,
+    "promo": 0,
+    "duration": "30min"
+  },
+  {
+    "id": "h_mrg6buuqebbf9d",
+    "category": "Blow & Styling",
+    "name": "Spiral Hair Styling",
+    "price": 45000,
+    "promo": 0,
+    "duration": "45min"
+  },
+  {
+    "id": "h_mrg6buuq608c6f",
+    "category": "Hair Cut",
+    "name": "Haircut Layer Modern",
+    "price": 50000,
+    "promo": 0,
+    "duration": "45min"
+  },
+  {
+    "id": "h_mrg6buuq65f223",
+    "category": "Hair Cut",
+    "name": "Haircut Yongen",
+    "price": 50000,
+    "promo": 0,
+    "duration": "40min"
+  },
+  {
+    "id": "h_mrg6buuqbf3426",
+    "category": "Hair Spa & Treatment",
+    "name": "Pakai Vitamin",
+    "price": 5000,
+    "promo": 0,
+    "duration": "5min"
+  },
+  {
+    "id": "h_mrg6buuqa8dda8",
+    "category": "Hair Cut",
+    "name": "Cut Bangs",
+    "price": 10000,
+    "promo": 0,
+    "duration": "5min"
+  },
+  {
+    "id": "h_mrg6buuq8042e6",
+    "category": "Hair Spa & Treatment",
+    "name": "Creambath Makarizo",
+    "price": 50000,
+    "promo": 0,
+    "duration": "30min"
+  },
+  {
+    "id": "h_mrg6buuq803a26",
+    "category": "Hair Spa & Treatment",
+    "name": "Hairmask CBD / KERATIN",
+    "price": 70000,
+    "promo": 0,
+    "duration": "1h"
+  },
+  {
+    "id": "h_mrg6buuq76fe88",
+    "category": "Hair Spa & Treatment",
+    "name": "Hair Wash",
+    "price": 20000,
+    "promo": 0,
+    "duration": "15min"
+  },
+  {
+    "id": "h_mrg6buuq7fd8dd",
+    "category": "Hair Spa & Treatment",
+    "name": "Jasa Hairmask & Creambath",
+    "price": 40000,
+    "promo": 0,
+    "duration": "30min"
+  },
+  {
+    "id": "h_mrg6buuq36867c",
+    "category": "Coloring & Highlight",
+    "name": "Full Bleaching",
+    "price": 250000,
+    "promo": 0,
+    "duration": "30min"
+  },
+  {
+    "id": "h_mrg6buurd4381b",
+    "category": "Blow & Styling",
+    "name": "Spiral Extention",
+    "price": 55000,
+    "promo": 0,
+    "duration": "30min"
+  },
+  {
+    "id": "h_mrg6buurb2f64a",
+    "category": "Blow & Styling",
+    "name": "Catok Blow Extention",
+    "price": 45000,
+    "promo": 0,
+    "duration": "30min"
+  },
+  {
+    "id": "h_mrg6buure04c2e",
+    "category": "Hair Cut",
+    "name": "Haircut Oval Layer",
+    "price": 50000,
+    "promo": 0,
+    "duration": "20min"
+  },
+  {
+    "id": "h_mrg6buur457d7d",
+    "category": "Coloring & Highlight",
+    "name": "Colouring Extension",
+    "price": 400000,
+    "promo": 0,
+    "duration": "30min"
+  },
+  {
+    "id": "h_mrg6buura690e2",
+    "category": "Hair Spa & Treatment",
+    "name": "Massage Body 60 Menit",
+    "price": 120000,
+    "promo": 0,
+    "duration": "1h"
+  },
+  {
+    "id": "h_mrg6buura0e125",
+    "category": "Hair Spa & Treatment",
+    "name": "Body Scrub 40 Menit",
+    "price": 100000,
+    "promo": 0,
+    "duration": "40min"
+  },
+  {
+    "id": "h_mrg6buuracc6d8",
+    "category": "Hair Spa & Treatment",
+    "name": "Hairmask Chocolate",
+    "price": 50000,
+    "promo": 0,
+    "duration": "30min"
+  },
+  {
+    "id": "h_mrg6buur0a3b15",
+    "category": "Perm & Rebonding",
+    "name": "Smoothing Medium",
+    "price": 300000,
+    "promo": 0,
+    "duration": "4h"
+  },
+  {
+    "id": "h_mrg6buur2e9e57",
+    "category": "Coloring & Highlight",
+    "name": "Colouring",
+    "price": 250000,
+    "promo": 0,
+    "duration": "5min"
+  },
+  {
+    "id": "h_mrg6buur76a0cb",
+    "category": "Coloring & Highlight",
+    "name": "Highlight",
+    "price": 300000,
+    "promo": 0,
+    "duration": "2h"
+  },
+  {
+    "id": "h_mrg6buurdf5813",
+    "category": "Hair Spa & Treatment",
+    "name": "Hairmask Matrix",
+    "price": 80000,
+    "promo": 0,
+    "duration": "30min"
+  },
+  {
+    "id": "h_mrg6buurc8f42c",
+    "category": "Hair Spa & Treatment",
+    "name": "Hairmask Biolage",
+    "price": 80000,
+    "promo": 0,
+    "duration": "30min"
+  },
+  {
+    "id": "h_mrg6buur6b5f6c",
+    "category": "Blow & Styling",
+    "name": "Pakai Hair spray",
+    "price": 5000,
+    "promo": 0,
+    "duration": "5min"
+  },
+  {
+    "id": "h_mrg6buur3c5cc0",
+    "category": "Coloring & Highlight",
+    "name": "Jasa Cat",
+    "price": 120000,
+    "promo": 0,
+    "duration": "30min"
+  },
+  {
+    "id": "h_mrg6buur02ccf3",
+    "category": "Perm & Rebonding",
+    "name": "Smoothing Long",
+    "price": 400000,
+    "promo": 0,
+    "duration": "1h 50min"
+  },
+  {
+    "id": "h_mrg6buurdc15f8",
+    "category": "Hair Cut",
+    "name": "Short Bob Cut",
+    "price": 40000,
+    "promo": 0,
+    "duration": "30min"
+  },
+  {
+    "id": "h_mrg6buus9685dc",
+    "category": "Hair Spa & Treatment",
+    "name": "Hairmask Keratin Inaura",
+    "price": 70000,
+    "promo": 0,
+    "duration": "30min"
+  },
+  {
+    "id": "h_mrg6buus731f4f",
+    "category": "Hair Spa & Treatment",
+    "name": "Creambath Inaura",
+    "price": 40000,
+    "promo": 0,
+    "duration": "30min"
+  },
+  {
+    "id": "h_mrg6buusbbccad",
+    "category": "Hair Spa & Treatment",
+    "name": "Hair mask Strawbery",
+    "price": 50000,
+    "promo": 0,
+    "duration": "30min"
+  },
+  {
+    "id": "h_mrg6buus7256b6",
+    "category": "Hair Spa & Treatment",
+    "name": "Hairmask Ketombe",
+    "price": 50000,
+    "promo": 0,
+    "duration": "30min"
+  },
+  {
+    "id": "h_mrg6buus41a331",
+    "category": "Lainnya",
+    "name": "Pakai Shampo",
+    "price": 5000,
+    "promo": 0,
+    "duration": "5min"
+  },
+  {
+    "id": "h_mrg6buus5b01cc",
+    "category": "Lainnya",
+    "name": "Pakai Conditioner",
+    "price": 5000,
+    "promo": 0,
+    "duration": "5min"
+  },
+  {
+    "id": "h_mrg6buus816a99",
+    "category": "Blow & Styling",
+    "name": "Cutting styling",
+    "price": 85000,
+    "promo": 0,
+    "duration": "5min"
+  },
+  {
+    "id": "h_mrg6buus27004a",
+    "category": "Whitening",
+    "name": "Bleaching Badan",
+    "price": 80000,
+    "promo": 0,
+    "duration": "30min"
+  },
+  {
+    "id": "h_mrg6buus0153f9",
+    "category": "Hair Spa & Treatment",
+    "name": "Mandi Susu Oles",
+    "price": 80000,
+    "promo": 0,
+    "duration": "30min"
+  },
+  {
+    "id": "h_mrg6buus8ecfae",
+    "category": "Facial",
+    "name": "Facial Treatment",
+    "price": 100000,
+    "promo": 0,
+    "duration": "35min"
+  },
+  {
+    "id": "h_mrg6buusa6a764",
+    "category": "Hair Spa & Treatment",
+    "name": "Ratus Vagina",
+    "price": 50000,
+    "promo": 30000,
+    "duration": "5min"
+  },
+  {
+    "id": "h_mrg6buus9a1a58",
+    "category": "Coloring & Highlight",
+    "name": "Pasang Ext Kepang 2*3",
+    "price": 6000,
+    "promo": 0,
+    "duration": "5min"
+  },
+  {
+    "id": "h_mrg6buus265f91",
+    "category": "Nail Art",
+    "name": "PROMO Nail Gell Polos",
+    "price": 60000,
+    "promo": 0,
+    "duration": "5min"
+  },
+  {
+    "id": "h_mrg6buus90f221",
+    "category": "Nail Art",
+    "name": "PROMO Nail Art Simple",
+    "price": 120000,
+    "promo": 0,
+    "duration": "5min"
+  },
+  {
+    "id": "h_mrg6buus26e07d",
+    "category": "Nail Art",
+    "name": "PROMO Nail Art Premium",
+    "price": 140000,
+    "promo": 0,
+    "duration": "5min"
+  },
+  {
+    "id": "h_mrg6buus9e6177",
+    "category": "Nail Art",
+    "name": "PROMO Nail Art Cat Eye",
+    "price": 90000,
+    "promo": 0,
+    "duration": "5min"
+  },
+  {
+    "id": "h_mrg6buus137f8a",
+    "category": "Nail Art",
+    "name": "Kuku Palsu 10 Jari",
+    "price": 20000,
+    "promo": 0,
+    "duration": "5min"
+  },
+  {
+    "id": "h_mrg6buutc6feb2",
+    "category": "Nail Art",
+    "name": "Remover",
+    "price": 30000,
+    "promo": 0,
+    "duration": "5min"
+  },
+  {
+    "id": "h_mrg6buuta9acc2",
+    "category": "Lulur",
+    "name": "PROMO Ratus Mis-V",
+    "price": 30000,
+    "promo": 0,
+    "duration": "5min"
+  },
+  {
+    "id": "h_mrg6buut0e37b3",
+    "category": "Nail Art",
+    "name": "NailArt Simple",
+    "price": 170000,
+    "promo": 120000,
+    "duration": "30min"
+  },
+  {
+    "id": "h_mrg6buut8f4fc9",
+    "category": "Nail Art",
+    "name": "Nail jell polos",
+    "price": 110000,
+    "promo": 60000,
+    "duration": "30min"
+  },
+  {
+    "id": "h_mrg6buut763b18",
+    "category": "Nail Art",
+    "name": "Nail Cat Eye",
+    "price": 150000,
+    "promo": 90000,
+    "duration": "30min"
+  },
+  {
+    "id": "h_mrg6buut4c2e04",
+    "category": "Nail Art",
+    "name": "NailArt Premium",
+    "price": 200000,
+    "promo": 140000,
+    "duration": "30min"
+  },
+  {
+    "id": "h_mrg6buutc14b74",
+    "category": "Nail Art",
+    "name": "Penambahan Kupal",
+    "price": 20000,
+    "promo": 0,
+    "duration": "30min"
+  },
+  {
+    "id": "h_mrg6buut5baade",
+    "category": "Lainnya",
+    "name": "Pasang ext 2*2",
+    "price": 4000,
+    "promo": 0,
+    "duration": "5min"
+  },
+  {
+    "id": "h_mrg6buutfd87f9",
+    "category": "Lainnya",
+    "name": "Lepas Ext 80helai",
+    "price": 80000,
+    "promo": 0,
+    "duration": "5min"
+  },
+  {
+    "id": "h_mrg6buut7d3074",
+    "category": "Lainnya",
+    "name": "Service Ext 142 Helai",
+    "price": 114000,
+    "promo": 0,
+    "duration": "5min"
+  },
+  {
+    "id": "h_mrg6buut245b1d",
+    "category": "Lainnya",
+    "name": "Shower Cap",
+    "price": 5000,
+    "promo": 0,
+    "duration": "5min"
+  },
+  {
+    "id": "h_mrg6buutf09771",
+    "category": "Lainnya",
+    "name": "Rambut Ext Premium 25Helai*9",
+    "price": 830000,
+    "promo": 0,
+    "duration": "5min"
+  },
+  {
+    "id": "h_mrg6buut0bde43",
+    "category": "Lainnya",
+    "name": "Pasang Ext 110 Helai*3",
+    "price": 114000,
+    "promo": 0,
+    "duration": "5min"
+  },
+  {
+    "id": "h_mrg6buutf20fe6",
+    "category": "Hair Spa & Treatment",
+    "name": "Scrub Scalp",
+    "price": 25000,
+    "promo": 0,
+    "duration": "5min"
+  },
+  {
+    "id": "h_mrg6buut7e4b40",
+    "category": "Perm & Rebonding",
+    "name": "Smoothing Short",
+    "price": 350000,
+    "promo": 0,
+    "duration": "5min"
+  },
+  {
+    "id": "h_mrg6buut7ccefc",
+    "category": "Hair Spa & Treatment",
+    "name": "Totok Wajah 30menit",
+    "price": 45000,
+    "promo": 0,
+    "duration": "5min"
+  },
+  {
+    "id": "h_mrg6buut5430b7",
+    "category": "Blow & Styling",
+    "name": "Gunting Rapi",
+    "price": 30000,
+    "promo": 0,
+    "duration": "5min"
+  }
+]

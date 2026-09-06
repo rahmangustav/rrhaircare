@@ -1,10 +1,37 @@
 # Konfigurasi Netlify untuk Toko RR Hair Care
 [build]
+  # Menanam daftar harga + schema layanan ke public/index.html sebelum publish.
+  # Skripnya tanpa dependensi dan tidak pernah menggagalkan build (lihat
+  # scripts/prerender.js).
+  command = "node scripts/prerender.js"
   publish = "public"
   functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "22"
+  # netlify-cli ada di devDependencies untuk uji coba di komputer, tapi tidak
+  # dibutuhkan saat build di Netlify — ~1000 paket, boros menit build.
+  NPM_FLAGS = "--omit=dev"
 
 [functions]
   node_bundler = "esbuild"
 
 # Halaman utama & aset dilayani statis dari /public.
 # Rute /api/* ditangani oleh Netlify Functions (lihat config.path di tiap fungsi).
+
+# Aset bermerek jarang berubah tapi dilayani tanpa cache sama sekali.
+# Foto unggahan (/api/media/*) sudah immutable setahun dari fungsinya sendiri.
+[[headers]]
+  for = "/img/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/css/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "/js/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"

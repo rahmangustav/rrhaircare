@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Halaman tidak ditemukan — RR Hair Care</title>
+<meta name="robots" content="noindex"/>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
+<link rel="icon" href="/favicon-32x32.png" sizes="32x32"/>
+<link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&display=swap" rel="stylesheet"/>
+<style>
+  /* Palet sama dengan landing (lihat :root di index.html). */
+  :root{
+    --charcoal:#17140F; --ivory:#FBF8F3; --accent:#7A2E3F;
+    --soft-white:#FFFDFA; --muted:#6E6A64; --line:#E6DFD6;
+    --serif:'Fraunces',Georgia,'Times New Roman',serif;
+    --sans:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--sans);background:var(--soft-white);color:var(--charcoal);
+    line-height:1.6;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px 24px}
+  .kotak{max-width:520px}
+  .logo{display:flex;align-items:center;gap:12px;margin-bottom:40px}
+  .logo img{height:38px;width:38px;object-fit:contain}
+  .logo span{font-family:var(--serif);font-size:1.2rem;font-weight:600;letter-spacing:.06em}
+  .logo em{color:var(--accent);font-style:normal}
+  .kode{font-family:var(--serif);font-size:.8rem;letter-spacing:.24em;color:var(--muted);text-transform:uppercase}
+  h1{font-family:var(--serif);font-size:clamp(1.8rem,4vw,2.6rem);font-weight:400;
+    letter-spacing:-.01em;line-height:1.12;margin:10px 0 14px}
+  p{color:var(--muted);font-size:.95rem;margin-bottom:30px}
+  .tautan{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:34px}
+  .btn{display:inline-flex;align-items:center;padding:12px 22px;border-radius:999px;
+    font-size:.85rem;font-weight:600;text-decoration:none;transition:.2s}
+  .btn-utama{background:var(--charcoal);color:#fff}
+  .btn-utama:hover{background:var(--accent)}
+  .btn-garis{border:1px solid var(--line);color:var(--charcoal)}
+  .btn-garis:hover{border-color:var(--accent);color:var(--accent)}
+  .lain{border-top:1px solid var(--line);padding-top:22px;font-size:.85rem;color:var(--muted)}
+  .lain a{color:var(--charcoal);text-decoration:none;border-bottom:1px solid var(--line)}
+  .lain a:hover{color:var(--accent);border-color:var(--accent)}
+  .lain ul{list-style:none;display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:10px}
+</style>
+</head>
+<body>
+  <div class="kotak">
+    <a class="logo" href="/" style="text-decoration:none;color:inherit">
+      <img src="/img/logo.png" alt="" width="38" height="38"/>
+      <span>RR <em>Hair Care</em></span>
+    </a>
+
+    <div class="kode">Error 404</div>
+    <h1>Halaman ini tidak ada</h1>
+    <p>Mungkin tautannya salah ketik, atau halamannya sudah dipindah. Salonnya tetap buka —
+       setiap hari 09.00–21.00 di Rawabadak Utara, Koja.</p>
+
+    <div class="tautan">
+      <a class="btn btn-utama" href="/">Kembali ke beranda</a>
+      <a class="btn btn-garis" href="/#harga">Lihat daftar harga</a>
+    </div>
+
+    <div class="lain">
+      Cari yang ini?
+      <ul>
+        <li><a href="/#layanan">Layanan</a></li>
+        <li><a href="/#galeri">Galeri</a></li>
+        <li><a href="/#booking">Booking</a></li>
+        <li><a href="/toko">Belanja produk</a></li>
+        <li><a href="/#lokasi">Alamat &amp; jam buka</a></li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>

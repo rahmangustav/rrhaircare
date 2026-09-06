@@ -1,98 +1,43 @@
-// Isi section #harga dari /api/pricelist, dikelompokkan per kategori.
+// Isi section #harga dari /api/pricelist. Markup-nya sudah ditanam saat build
+// (lihat scripts/prerender.js) supaya terbaca mesin pencari; di browser isinya
+// ditimpa dengan data terbaru agar harga yang diubah di admin langsung tampil
+// tanpa menunggu deploy berikutnya. Logika render dipakai bersama —
+// public/js/pricelist-render.js.
 (function () {
   var wrap = document.getElementById('priceWrap');
   if (!wrap) return;
-  var esc = function (s) { return String(s || '').replace(/[&<>"]/g, function (c) {
-    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
-  var rupiah = function (n) { return 'Rp' + (Number(n) || 0).toLocaleString('id-ID'); };
-  // Rapikan durasi POS: "1h 50min" → "1 jam 50 mnt"
-  var dur = function (d) {
-    if (!d) return '';
-    return String(d)
-      .replace(/(\d+)\s*h/g, '$1 jam')
-      .replace(/(\d+)\s*min/g, '$1 mnt')
-      .replace(/\s+/g, ' ').trim();
-  };
-  // Layanan tambahan: tidak berdiri sendiri, selalu menempel pada layanan lain
-  // ("Pakai Vitamin" Rp5.000, "Pasang Ext Kepang" Rp6.000). Kalau ikut dihitung,
-  // kartu kategori jadi bohong — "Coloring & Highlight mulai Rp6.000" padahal
-  // coloring beneran mulai Rp120.000. Ini HANYA memengaruhi angka "mulai";
-  // barisnya tetap tampil utuh di daftar harga dan dropdown booking.
-  var ADDON = /^(pakai|pasang|penambahan)\s/i;
-
-  // Urutan kategori yang diutamakan
-  var ORDER = ['Hair Cut', 'Blow & Styling', 'Coloring & Highlight', 'Perm & Rebonding',
-    'Hair Spa & Treatment', 'Facial', 'Nail Art', 'Lulur', 'Whitening', 'Paket Layanan', 'Lainnya'];
+  var R = window.PricelistRender;
+  if (!R) return; // modul render gagal dimuat: biarkan versi statis apa adanya
 
   fetch('/api/pricelist').then(function (r) { return r.json(); }).then(function (list) {
-    if (!Array.isArray(list) || !list.length) {
-      wrap.innerHTML = '<p class="price-loading">Daftar harga akan segera hadir.</p>';
-      return;
-    }
-    var groups = {};
-    list.forEach(function (it) { (groups[it.category] = groups[it.category] || []).push(it); });
-    var cats = Object.keys(groups).sort(function (a, b) {
-      var ia = ORDER.indexOf(a), ib = ORDER.indexOf(b);
-      if (ia < 0) ia = 99; if (ib < 0) ib = 99;
-      return ia - ib || a.localeCompare(b);
-    });
-    wrap.innerHTML = cats.map(function (cat) {
-      var rows = groups[cat].map(function (it) {
-        var d = dur(it.duration);
-        var priceHtml = it.promo && it.promo < it.price
-          ? '<span class="was">' + rupiah(it.price) + '</span><span class="now">' + rupiah(it.promo) + '</span>'
-          : rupiah(it.price);
-        return '<div class="price-row">' +
-          '<span class="pn">' + esc(it.name) + (d ? ' <span class="pd">· ' + esc(d) + '</span>' : '') + '</span>' +
-          '<span class="leader"></span>' +
-          '<span class="pp">' + priceHtml + '</span>' +
-          '</div>';
-      }).join('');
-      // Akordeon: kategori tertutup secara default supaya halaman tidak memanjang.
-      return '<details class="price-cat">' +
-        '<summary><h3>' + esc(cat) + '</h3>' +
-        '<span class="pc-count">' + groups[cat].length + ' layanan</span>' +
-        '<span class="pc-chev" aria-hidden="true">&#9662;</span></summary>' +
-        '<div class="pc-items">' + rows + '</div>' +
-        '</details>';
-    }).join('');
+    if (!Array.isArray(list) || !list.length) return; // pertahankan versi statis
+    var g = R.kelompokkan(list);
+    wrap.innerHTML = R.akordeonHtml(list);
 
     // Kartu layanan di section atas ikut memakai angka asli: jumlah layanan
     // dan harga termurah per kategori. Sekali harga diubah di admin, teks di
     // kartu ikut berubah — tidak ada angka yang perlu disunting manual.
     document.querySelectorAll('.service-card[data-kategori]').forEach(function (card) {
-      var items = groups[card.getAttribute('data-kategori')];
+      var items = g.groups[card.getAttribute('data-kategori')];
       var meta = card.querySelector('.service-meta');
       if (!meta || !items || !items.length) return;
-      var utama = items.filter(function (it) { return !ADDON.test(it.name); });
-      if (!utama.length) utama = items; // kategori yang isinya add-on semua
-      var murah = Infinity;
-      utama.forEach(function (it) {
-        var v = (it.promo && it.promo < it.price) ? it.promo : it.price;
-        if (v && v < murah) murah = v;
-      });
-      // Jumlah layanan tetap menghitung semua baris, termasuk add-on.
-      meta.textContent = items.length + ' layanan'
-        + (murah < Infinity ? ' · mulai ' + rupiah(murah) : '');
+      meta.textContent = R.metaKartu(items);
     });
 
     // Isi dropdown Layanan di form Booking (nama + harga), kelompok per kategori.
     var sel = document.getElementById('layanan-select');
     if (sel) {
       var opts = '<option value="">-- Pilih Layanan --</option>';
-      cats.forEach(function (cat) {
+      g.cats.forEach(function (cat) {
         if (cat === 'Lainnya') return; // add-on kecil, tak perlu di booking
-        opts += '<optgroup label="' + esc(cat) + '">';
-        groups[cat].forEach(function (it) {
-          var harga = (it.promo && it.promo < it.price) ? it.promo : it.price;
-          var label = it.name + ' — ' + rupiah(harga);
-          opts += '<option value="' + esc(label) + '">' + esc(label) + '</option>';
+        opts += '<optgroup label="' + R.esc(cat) + '">';
+        g.groups[cat].forEach(function (it) {
+          var label = it.name + ' — ' + R.rupiah(R.hargaEfektif(it));
+          opts += '<option value="' + R.esc(label) + '">' + R.esc(label) + '</option>';
         });
         opts += '</optgroup>';
       });
       sel.innerHTML = opts;
     }
-  }).catch(function () {
-    wrap.innerHTML = '<p class="price-loading">Gagal memuat daftar harga.</p>';
-  });
+  }).catch(function () { /* versi statis tetap tampil */ });
 })();

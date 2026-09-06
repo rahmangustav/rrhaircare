@@ -1,0 +1,50 @@
+[
+  {
+    "id": "g_mrg66xf2f296",
+    "image": "/api/media/mrg66xc9149f89.jpg",
+    "caption": "NailArt",
+    "createdAt": 1783762592942
+  },
+  {
+    "id": "g_mrg4x1q0bf5b",
+    "image": "/api/media/mrg4x1nvb3d0d5.jpg",
+    "caption": "",
+    "createdAt": 1783760452344
+  },
+  {
+    "id": "g_mrg4wtrha7f6",
+    "image": "/api/media/mrg4wtocff07d0.jpg",
+    "caption": "",
+    "createdAt": 1783760442030
+  },
+  {
+    "id": "g_mrg3y2o24af5",
+    "image": "/api/media/mrg3y2m020593c.jpg",
+    "caption": "Highlight",
+    "createdAt": 1783758820610
+  },
+  {
+    "id": "g_mrg3x834e359",
+    "image": "/api/media/mrg3x80hb2910c.jpg",
+    "caption": "Coloring",
+    "createdAt": 1783758780976
+  },
+  {
+    "id": "g_mrg3wv1s4416",
+    "image": "/api/media/mrg3wuz5938cb4.jpg",
+    "caption": "Coloring",
+    "createdAt": 1783758764080
+  },
+  {
+    "id": "g_mrg3vbqz692b",
+    "image": "/api/media/mrg3vbp16b9a20.jpg",
+    "caption": "Smoothing Keratin",
+    "createdAt": 1783758692412
+  },
+  {
+    "id": "g_mrg3r6mme71f",
+    "image": "/api/media/mrg3r6jk94387d.jpg",
+    "caption": "HairCut Layer",
+    "createdAt": 1783758499150
+  }
+]

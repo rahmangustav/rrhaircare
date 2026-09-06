@@ -38,7 +38,9 @@
       if (span && span.textContent && span.textContent.trim() !== 'Lihat') cap = span.textContent.trim();
     }
     if (!cap && img.alt && img.alt !== 'RR Hair Care') cap = img.alt;
-    open(img.src, cap);
+    // Thumbnail dilayani versi kecil lewat Image CDN; lightbox pakai versi
+    // besar dari data-full supaya tidak buram saat diperbesar.
+    open(img.getAttribute('data-full') || img.src, cap);
   });
 
   closeBtn.addEventListener('click', close);
