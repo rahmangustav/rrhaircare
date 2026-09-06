@@ -138,7 +138,7 @@ async function loadOrders(){
     <div class="stat"><div class="n">${list.length}</div><div class="l">Total Pesanan</div></div>
     <div class="stat"><div class="n" style="color:#1f5fb5">${perlu}</div><div class="l">Perlu Verifikasi</div></div>
     <div class="stat"><div class="n" style="color:#5b3fb5">${proses}</div><div class="l">Sedang Diproses</div></div>
-    <div class="stat"><div class="n" style="color:var(--rose-gold)">${rupiah(omzet)}</div><div class="l">Omzet (terbayar)</div></div>`;
+    <div class="stat"><div class="n" style="color:var(--accent)">${rupiah(omzet)}</div><div class="l">Omzet (terbayar)</div></div>`;
   const box = document.getElementById('orderList');
   if (!list.length){ box.innerHTML='<div class="empty">Belum ada pesanan.</div>'; return; }
   box.innerHTML = list.map(o => {
@@ -194,7 +194,7 @@ async function loadStats(){
   let w7 = 0; for (let i=0;i<7;i++){ const k=ymd(new Date(Date.now()-i*864e5)); w7 += (days[k]||{}).visitors||0; }
   document.getElementById('visitStats').innerHTML = `
     <div class="stat"><div class="n">${total.visitors||0}</div><div class="l">Pengunjung (total)</div></div>
-    <div class="stat"><div class="n" style="color:var(--rose-gold)">${total.views||0}</div><div class="l">Kunjungan halaman</div></div>
+    <div class="stat"><div class="n" style="color:var(--accent)">${total.views||0}</div><div class="l">Kunjungan halaman</div></div>
     <div class="stat"><div class="n" style="color:#1f5fb5">${tv.visitors||0}</div><div class="l">Pengunjung hari ini</div></div>
     <div class="stat"><div class="n" style="color:#5b3fb5">${w7}</div><div class="l">Pengunjung 7 hari</div></div>`;
   // Grafik 14 hari (bar)
@@ -206,7 +206,7 @@ async function loadStats(){
     const h = Math.round(b.v/max*130);
     return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px" title="${b.k}: ${b.v} pengunjung">
       <div style="font-size:.7rem;color:var(--muted)">${b.v||''}</div>
-      <div style="width:100%;height:${h}px;min-height:2px;background:var(--rose-gold);border-radius:4px 4px 0 0;opacity:${b.v?1:.25}"></div>
+      <div style="width:100%;height:${h}px;min-height:2px;background:var(--accent);border-radius:4px 4px 0 0;opacity:${b.v?1:.25}"></div>
       <div style="font-size:.62rem;color:var(--muted)">${b.label}</div>
     </div>`; }).join('');
   document.getElementById('visitFirst').textContent = a.firstAt
@@ -226,7 +226,7 @@ async function loadStats(){
   document.getElementById('goalStats').innerHTML = `
     <div class="stat"><div class="n" style="color:#1f7a3d">${bookW7}</div><div class="l">Booking 7 hari</div></div>
     <div class="stat"><div class="n">${bookTot}</div><div class="l">Booking total</div></div>
-    <div class="stat"><div class="n" style="color:var(--rose-gold)">${tot('booking_form')}</div><div class="l">Lewat form booking</div></div>
+    <div class="stat"><div class="n" style="color:var(--accent)">${tot('booking_form')}</div><div class="l">Lewat form booking</div></div>
     <div class="stat"><div class="n" style="color:var(--muted)">${tot('lamaran_kerja')}</div><div class="l">Lamaran kerja</div></div>`;
   // Grafik 14 hari khusus booking — supaya tren mingguannya kelihatan,
   // bukan cuma satu angka tanpa konteks.

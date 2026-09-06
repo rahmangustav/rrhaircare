@@ -13,6 +13,13 @@
       .replace(/(\d+)\s*min/g, '$1 mnt')
       .replace(/\s+/g, ' ').trim();
   };
+  // Layanan tambahan: tidak berdiri sendiri, selalu menempel pada layanan lain
+  // ("Pakai Vitamin" Rp5.000, "Pasang Ext Kepang" Rp6.000). Kalau ikut dihitung,
+  // kartu kategori jadi bohong — "Coloring & Highlight mulai Rp6.000" padahal
+  // coloring beneran mulai Rp120.000. Ini HANYA memengaruhi angka "mulai";
+  // barisnya tetap tampil utuh di daftar harga dan dropdown booking.
+  var ADDON = /^(pakai|pasang|penambahan)\s/i;
+
   // Urutan kategori yang diutamakan
   var ORDER = ['Hair Cut', 'Blow & Styling', 'Coloring & Highlight', 'Perm & Rebonding',
     'Hair Spa & Treatment', 'Facial', 'Nail Art', 'Lulur', 'Whitening', 'Paket Layanan', 'Lainnya'];
@@ -57,11 +64,14 @@
       var items = groups[card.getAttribute('data-kategori')];
       var meta = card.querySelector('.service-meta');
       if (!meta || !items || !items.length) return;
+      var utama = items.filter(function (it) { return !ADDON.test(it.name); });
+      if (!utama.length) utama = items; // kategori yang isinya add-on semua
       var murah = Infinity;
-      items.forEach(function (it) {
+      utama.forEach(function (it) {
         var v = (it.promo && it.promo < it.price) ? it.promo : it.price;
         if (v && v < murah) murah = v;
       });
+      // Jumlah layanan tetap menghitung semua baris, termasuk add-on.
       meta.textContent = items.length + ' layanan'
         + (murah < Infinity ? ' · mulai ' + rupiah(murah) : '');
     });
