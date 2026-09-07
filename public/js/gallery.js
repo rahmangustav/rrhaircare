@@ -41,12 +41,28 @@
         .replace(' loading="lazy"', el.getAttribute('data-slot') === 'hero' ? ' fetchpriority="high"' : ' loading="lazy"');
       el.removeAttribute('hidden'); // slot yang disembunyikan saat build kini terisi
     };
+    // Teks alternatif per slot — sebelumnya semua foto tetap ber-alt "RR Hair Care",
+    // yang tidak memberi tahu apa pun ke pembaca layar maupun mesin pencari.
+    var ALT = {
+      hero: 'Suasana salon RR Hair Care di Koja, Jakarta Utara',
+      about: 'Rani Apriyani dan Ratih Handayani, pendiri RR Hair Care',
+      'layanan-haircut': 'Layanan potong rambut di RR Hair Care',
+      'layanan-coloring': 'Layanan coloring dan highlight di RR Hair Care',
+      'layanan-smoothing': 'Layanan smoothing dan rebonding di RR Hair Care',
+      'layanan-hairspa': 'Layanan hair spa dan treatment di RR Hair Care',
+      'layanan-nailart': 'Layanan nail art di RR Hair Care',
+      'layanan-paket': 'Paket layanan hemat di RR Hair Care',
+    };
     document.querySelectorAll('[data-slot]').forEach(function (el) {
       var slot = el.getAttribute('data-slot');
       var lebar = slot === 'hero' ? 840 : (slot === 'about' ? 800 : 720);
-      if (imgs[slot]) return pasang(el, imgs[slot], 'RR Hair Care', lebar);
+      if (imgs[slot]) return pasang(el, imgs[slot], ALT[slot] || 'RR Hair Care', lebar);
+      // Hero belum diisi di admin: pinjam foto galeri TERBARU. Ini cuma jaring
+      // pengaman — artinya foto pembuka halaman ikut berganti tiap ada unggahan
+      // baru, dan bisa berakhir menampilkan nail art di situs salon rambut.
+      // Isi slot "hero" di admin supaya tetap.
       if (slot === 'hero' && galeri.length) {
-        return pasang(el, galeri[0].image, galeri[0].caption || 'Hasil kerja RR Hair Care', lebar);
+        return pasang(el, galeri[0].image, galeri[0].caption || ALT.hero, lebar);
       }
       if (el.classList.contains('service-photo')) el.hidden = true;
     });

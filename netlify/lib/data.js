@@ -86,26 +86,36 @@ export function verifyToken(token, secret) {
 }
 
 // ── Pengaturan (dibuat otomatis pertama kali) ──
+// Bawaan dipisah supaya kunci yang ditambahkan belakangan (mis. `stylists`)
+// tetap terisi di site yang blob settings-nya sudah lama ada — kalau tidak,
+// kunci baru selamanya undefined sampai ada yang menyimpan pengaturan.
+const SETTINGS_BAWAAN = {
+  storeName: 'RR Hair Care',
+  whatsapp: '6281234567890',
+  qrisImage: '',
+  bankInfo: 'BCA 1234567890 a.n. Rahman Gustav',
+  shippingOptions: [
+    { id: 'jabodetabek', label: 'Jabodetabek', price: 15000 },
+    { id: 'jawa', label: 'Pulau Jawa (luar Jabodetabek)', price: 25000 },
+    { id: 'luarjawa', label: 'Luar Pulau Jawa', price: 40000 },
+    { id: 'ambil', label: 'Ambil di salon (Koja) — gratis', price: 0 }
+  ],
+  // Nama penata yang muncul di dropdown "Preferensi Stylist" pada form booking.
+  // Diatur dari admin supaya tidak perlu deploy tiap ada yang keluar/masuk —
+  // sebelumnya di-hardcode di index.html dan tidak pernah ikut berubah.
+  stylists: ['Hesti', 'Fitri', 'Nayla', 'Septi', 'Intan'],
+};
+
 export async function getSettings() {
   let s = await readJSON('settings', null);
   if (!s) {
-    s = {
-      storeName: 'RR Hair Care',
-      whatsapp: '6281234567890',
-      qrisImage: '',
-      bankInfo: 'BCA 1234567890 a.n. Rahman Gustav',
-      shippingOptions: [
-        { id: 'jabodetabek', label: 'Jabodetabek', price: 15000 },
-        { id: 'jawa', label: 'Pulau Jawa (luar Jabodetabek)', price: 25000 },
-        { id: 'luarjawa', label: 'Luar Pulau Jawa', price: 40000 },
-        { id: 'ambil', label: 'Ambil di salon (Koja) — gratis', price: 0 }
-      ],
+    s = { ...SETTINGS_BAWAAN,
       adminPassword: hashPassword('admin123'),
-      authSecret: randomBytes(32).toString('hex')
-    };
+      authSecret: randomBytes(32).toString('hex') };
     await writeJSON('settings', s);
+    return s;
   }
-  return s;
+  return { ...SETTINGS_BAWAAN, ...s };
 }
 export async function saveSettings(patch) {
   const s = { ...(await getSettings()), ...patch };
@@ -579,6 +589,9 @@ function cleanPriceItem(p) {
     price: Number(p.price) || 0,
     promo: Number(p.promo) || 0,
     duration: (p.duration || '').toString().slice(0, 30),
+    // Keterangan singkat di bawah nama layanan. Dipakai terutama untuk paket,
+    // yang tanpa ini cuma tampil sebagai "Paket 1 Rp160.000" tanpa isi.
+    desc: (p.desc || '').toString().slice(0, 160),
   };
 }
 export async function addPriceItem(p) {
@@ -615,7 +628,8 @@ export function parsePricelistCsv(text) {
   const header = parseLine(lines[0]).map(h => h.replace(/\s+/g, ' ').trim());
   const col = (name) => header.indexOf(name);
   const iType = col('Type'), iTreat = col('Treatment Name'), iGroup = col('Group Name'),
-        iItem = col('Item Name'), iRetail = col('Retail Price'), iSpecial = col('Special Price'), iDur = col('Duration');
+        iItem = col('Item Name'), iRetail = col('Retail Price'), iSpecial = col('Special Price'),
+        iDur = col('Duration'), iDesc = col('Description');
   if (iItem < 0 || iRetail < 0) return []; // format tak dikenali
   const items = [];
   for (let r = 1; r < lines.length; r++) {
@@ -631,7 +645,8 @@ export function parsePricelistCsv(text) {
     const sp = idr(f[iSpecial]);
     const promo = (sp > 0 && sp < price) ? sp : 0;
     let dur = dec(iDur >= 0 ? f[iDur] : '');
-    items.push(cleanPriceItem({ category: cat, name, price, promo, duration: dur }));
+    const desc = dec(iDesc >= 0 ? f[iDesc] : '');
+    items.push(cleanPriceItem({ category: cat, name, price, promo, duration: dur, desc }));
   }
   return items;
 }

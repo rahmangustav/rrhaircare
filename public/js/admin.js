@@ -310,7 +310,8 @@ async function delGalleryPhoto(id){
 // ── Foto Bagian Halaman (slot tetap) ──
 // Daftar slot yang bisa diganti fotonya. Tambah entri di sini untuk slot baru.
 const SITE_IMG_SLOTS = [
-  { key:'hero',              label:'Halaman depan — foto besar paling atas', ratio:'4/5' },
+  { key:'hero',              label:'Halaman depan — foto besar paling atas', ratio:'4/5',
+    catatan:'Kalau dikosongkan, halaman depan memakai foto galeri TERBARU — jadi ikut berganti tiap kali upload foto baru.' },
   { key:'about',             label:'“Dua kakak beradik” — foto Rani & Ratih', ratio:'3/4' },
   { key:'layanan-haircut',   label:'Kartu layanan — Potong Rambut',          ratio:'3/2' },
   { key:'layanan-coloring',  label:'Kartu layanan — Coloring & Highlight',   ratio:'3/2' },
@@ -330,6 +331,7 @@ async function loadSiteImages(){
       : `<div style="aspect-ratio:${s.ratio||'3/4'};max-height:220px;display:flex;align-items:center;justify-content:center;border-radius:10px;border:1px dashed var(--line);color:var(--muted);font-size:.8rem">Belum ada foto</div>`;
     return `<div>
       <div style="font-size:.82rem;font-weight:600;margin-bottom:8px">${esc(s.label)}</div>
+      ${s.catatan && !url ? `<p class="help" style="margin:-4px 0 8px">${esc(s.catatan)}</p>` : ''}
       ${preview}
       <input type="file" accept="image/*" style="margin-top:10px" onchange="setSiteImage('${s.key}',this)"/>
       ${url?`<button class="icon-btn danger" style="margin-top:8px;width:100%" onclick="delSiteImage('${s.key}')"><i class="fa-solid fa-trash-can"></i> Hapus Foto</button>`:''}
@@ -363,13 +365,14 @@ async function loadPricelist(){
   try { list = await api('/api/admin/pricelist'); } catch(e){ return; }
   document.getElementById('priceCount').textContent = list.length ? `${list.length} layanan` : '';
   const body = document.getElementById('priceBody');
-  if (!list.length){ body.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:26px">Belum ada harga. Import CSV atau klik “Tambah Layanan”.</td></tr>'; return; }
+  if (!list.length){ body.innerHTML='<tr><td colspan="7" style="text-align:center";color:var(--muted);padding:26px">Belum ada harga. Import CSV atau klik “Tambah Layanan”.</td></tr>'; return; }
   body.innerHTML = list.map(h=>`<tr>
     <td><b>${esc(h.name)}</b></td>
     <td>${esc(h.category||'-')}</td>
     <td>${rupiah(h.price)}</td>
     <td>${h.promo?`<span style="color:#b0603f">${rupiah(h.promo)}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
     <td style="color:var(--muted);font-size:.82rem">${esc(h.duration||'')}</td>
+    <td style="color:var(--muted);font-size:.82rem;max-width:22ch">${esc(h.desc||'')}</td>
     <td style="white-space:nowrap">
       <button class="icon-btn" onclick='editPrice(${JSON.stringify(h)})'><i class="fa-solid fa-pen"></i></button>
       <button class="icon-btn danger" onclick="delPrice('${h.id}','${esc(h.name)}')"><i class="fa-solid fa-trash-can"></i></button>
@@ -377,7 +380,7 @@ async function loadPricelist(){
 }
 function openPrice(){
   document.getElementById('priceModalTitle').textContent='Tambah Layanan';
-  ['hId','hName','hCat','hPrice','hPromo','hDur'].forEach(id=>document.getElementById(id).value='');
+  ['hId','hName','hCat','hPrice','hPromo','hDur','hDesc'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('priceModal').classList.add('show');
 }
 function editPrice(h){
@@ -388,6 +391,7 @@ function editPrice(h){
   document.getElementById('hPrice').value=h.price||0;
   document.getElementById('hPromo').value=h.promo||'';
   document.getElementById('hDur').value=h.duration||'';
+  document.getElementById('hDesc').value=h.desc||'';
   document.getElementById('priceModal').classList.add('show');
 }
 function closePrice(){ document.getElementById('priceModal').classList.remove('show'); }
@@ -399,7 +403,8 @@ async function savePrice(){
   const body = {
     name, category: document.getElementById('hCat').value.trim(),
     price, promo: document.getElementById('hPromo').value || 0,
-    duration: document.getElementById('hDur').value.trim()
+    duration: document.getElementById('hDur').value.trim(),
+    desc: document.getElementById('hDesc').value.trim()
   };
   try {
     await api(id? `/api/admin/pricelist/${id}` : '/api/admin/pricelist', { method: id?'PUT':'POST', body });
@@ -433,8 +438,16 @@ async function loadSettings(){
   document.getElementById('setWa').value = s.whatsapp||'';
   document.getElementById('setBank').value = s.bankInfo||'';
   document.getElementById('qrisPreview').innerHTML = s.qrisImage? `<img src="${s.qrisImage}" style="max-width:150px;border-radius:10px;border:1px solid var(--line)"/>`:'<span class="help">Belum ada QRIS.</span>';
+  document.getElementById('setStylists').value = (s.stylists||[]).join('\n');
   SHIP = s.shippingOptions||[];
   renderShipEditor();
+}
+async function saveStylists(){
+  const list = document.getElementById('setStylists').value
+    .split('\n').map(n=>n.trim()).filter(Boolean);
+  try { await api('/api/admin/settings',{method:'PUT',body:{stylists:list}});
+    toast(list.length?`${list.length} stylist disimpan`:'Pilihan stylist dikosongkan'); loadSettings(); }
+  catch(e){ toast(e.message); }
 }
 function renderShipEditor(){
   document.getElementById('shipEditor').innerHTML = SHIP.map((s,i)=>`

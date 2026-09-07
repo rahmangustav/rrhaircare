@@ -15,6 +15,13 @@ export default async (req) => {
     if (b.whatsapp !== undefined) patch.whatsapp = b.whatsapp;
     if (b.bankInfo !== undefined) patch.bankInfo = b.bankInfo;
     if (Array.isArray(b.shippingOptions)) patch.shippingOptions = b.shippingOptions;
+    // Daftar stylist tampil di form booking publik: dibatasi panjang & jumlahnya,
+    // baris kosong dibuang, supaya panel tidak bisa menanam teks raksasa di landing.
+    if (Array.isArray(b.stylists)) {
+      patch.stylists = b.stylists
+        .map(n => String(n || '').replace(/\s+/g, ' ').trim().slice(0, 40))
+        .filter(Boolean).slice(0, 30);
+    }
     let oldQris = '';
     if (b.qrisData) {
       oldQris = (await getSettings()).qrisImage;

@@ -136,7 +136,7 @@
     </div>
     <div class="panel" style="overflow-x:auto">
       <div id="priceCount" class="help" style="margin-bottom:10px"></div>
-      <table><thead><tr><th>Layanan</th><th>Kategori</th><th>Harga</th><th>Promo</th><th>Durasi</th><th>Aksi</th></tr></thead>
+      <table><thead><tr><th>Layanan</th><th>Kategori</th><th>Harga</th><th>Promo</th><th>Durasi</th><th>Keterangan</th><th>Aksi</th></tr></thead>
         <tbody id="priceBody"></tbody></table>
     </div>
   </section>
@@ -194,6 +194,14 @@
       </div>
       <div>
         <div class="panel" style="margin-bottom:20px">
+          <h3 style="font-family:var(--serif);font-weight:500;font-size:1.3rem;margin-bottom:6px">Stylist</h3>
+          <p class="help" style="margin-bottom:10px">Nama yang bisa dipilih pengunjung di
+            <b>Preferensi Stylist</b> pada form booking. Satu nama per baris. Kosongkan
+            semuanya kalau tidak mau menawarkan pilihan stylist.</p>
+          <textarea id="setStylists" rows="6" placeholder="Hesti&#10;Fitri&#10;Nayla"></textarea>
+          <button class="btn btn-primary btn-block" style="margin-top:12px" onclick="saveStylists()">Simpan Stylist</button>
+        </div>
+        <div class="panel" style="margin-bottom:20px">
           <h3 style="font-family:var(--serif);font-weight:500;font-size:1.3rem;margin-bottom:10px">Ongkir</h3>
           <div class="ship-editor" id="shipEditor"></div>
           <button class="icon-btn" onclick="addShipLine()"><i class="fa-solid fa-plus"></i> Tambah opsi</button>
@@ -244,6 +252,10 @@
       <div><label for="hPromo">Harga Promo (opsional)</label><input id="hPromo" type="number" min="0" placeholder="kosongkan jika tak ada"/></div>
     </div>
     <label for="hDur">Durasi (opsional)</label><input id="hDur" placeholder="mis. 30min, 1h 50min"/>
+    <label for="hDesc">Keterangan (opsional)</label>
+    <input id="hDesc" maxlength="160" placeholder="mis. isi paket: creambath + potong + catok"/>
+    <p class="help">Tampil sebagai baris kecil di bawah nama layanan pada daftar harga.
+      Paling berguna untuk paket, supaya pelanggan tahu isinya.</p>
     <div class="modal-actions">
       <button class="btn btn-primary" style="flex:1" onclick="savePrice()">Simpan</button>
       <button class="btn btn-outline" onclick="closePrice()">Batal</button>

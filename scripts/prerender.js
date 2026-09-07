@@ -215,6 +215,9 @@ const tanggal = new Date().toISOString().slice(0, 10);
 const halaman = [
   { loc: 'https://rrhaircare.id/', changefreq: 'weekly', priority: '1.0' },
   { loc: 'https://rrhaircare.id/toko', changefreq: 'weekly', priority: '0.8' },
+  // Ketentuan belanja, pengembalian & privasi. Jarang berubah, tapi tetap perlu
+  // terindeks — halaman ini yang dirujuk dari checkout sebelum orang membayar.
+  { loc: 'https://rrhaircare.id/kebijakan', changefreq: 'yearly', priority: '0.3' },
 ];
 const sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n'
   + '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
