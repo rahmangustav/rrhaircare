@@ -304,6 +304,21 @@ export const getOrders = () => readJSON('orders', []);
 // membatasi panjang input teks bebas; /api/orders sebelumnya tidak — jadi
 // address/note bisa berukuran bebas dan terus ditulis ke satu blob `orders`
 // yang dibaca-tulis-ulang UTUH di tiap order baru & tiap upload bukti bayar.
+// Satu baris pesanan, dibangun dari catatan produk yang dipercaya (bukan dari
+// body request). Kategori ikut disimpan karena ada produk yang namanya persis
+// sama dan cuma beda kategori — mis. "Treat & Care 1000ml" versi Shampo dan
+// versi Conditioner. Tanpa kategori, pesanan yang masuk ke admin dan pesan
+// WhatsApp ke pembeli tidak bisa dipastikan yang mana.
+export function buildOrderItem(product, qty) {
+  return {
+    id: product.id,
+    name: product.name,
+    price: product.price,
+    qty: Math.max(1, Number(qty) || 1),
+    category: product.category || '',
+  };
+}
+
 export function sanitizeCustomer(customer) {
   return {
     name: (customer.name || '').toString().slice(0, 80),

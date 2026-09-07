@@ -89,6 +89,10 @@ nav{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-con
 .cart-item .ci-thumb{width:60px;height:60px;border-radius:10px;background:var(--ivory);object-fit:cover;flex-shrink:0}
 .cart-item .ci-info{flex:1;min-width:0}
 .cart-item h4{font-size:.9rem;font-weight:600;margin-bottom:2px}
+/* Beberapa produk bernama sama persis dan cuma beda kategori (mis. "Treat &
+   Care 1000ml" versi Shampo vs Conditioner) — di keranjang nama saja tidak
+   cukup untuk membedakannya. */
+.cart-item .ci-cat{font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
 .cart-item .ci-price{font-size:.82rem;color:var(--muted)}
 .qty{display:inline-flex;align-items:center;gap:10px;margin-top:6px;border:1px solid var(--line);border-radius:999px;padding:2px 6px}
 .qty button{background:none;border:none;cursor:pointer;font-size:1rem;width:22px;color:var(--charcoal)}

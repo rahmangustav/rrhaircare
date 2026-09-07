@@ -143,7 +143,7 @@ async function loadOrders(){
   if (!list.length){ box.innerHTML='<div class="empty">Belum ada pesanan.</div>'; return; }
   box.innerHTML = list.map(o => {
     const st = STATUS[o.status]||{l:o.status,c:'b-selesai'};
-    const items = o.items.map(i=>`<div class="summary-item" style="display:flex;justify-content:space-between;padding:6px 0"><span>${esc(i.name)} ×${i.qty}</span><span>${rupiah(i.price*i.qty)}</span></div>`).join('');
+    const items = o.items.map(i=>`<div class="summary-item" style="display:flex;justify-content:space-between;padding:6px 0"><span>${esc(i.name)}${i.category?` <span style="color:var(--muted)">(${esc(i.category)})</span>`:''} ×${i.qty}</span><span>${rupiah(i.price*i.qty)}</span></div>`).join('');
     const proof = o.paymentProof? `<div><b>Bukti bayar:</b><br><a href="${o.paymentProof}" target="_blank"><img class="proof-img" src="${o.paymentProof}"/></a></div>` : '<div class="help">Belum ada bukti pembayaran.</div>';
     const d = new Date(o.createdAt);
     return `<details class="order">
