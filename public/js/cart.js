@@ -8,7 +8,8 @@ const Cart = (() => {
   function add(p){
     const ex = items.find(i => i.id === p.id);
     if (ex) ex.qty++;
-    else items.push({ id: p.id, name: p.name, price: p.price, image: p.image, qty: 1 });
+    else items.push({ id: p.id, name: p.name, category: p.category || '',
+      price: p.price, image: p.image, qty: 1 });
     save();
   }
   function setQty(id, q){
@@ -40,6 +41,7 @@ const Cart = (() => {
       return `<div class="cart-item">${thumb}
         <div class="ci-info">
           <h4>${esc(i.name)}</h4>
+          ${i.category ? `<div class="ci-cat">${esc(i.category)}</div>` : ''}
           <div class="ci-price">${rupiah(i.price)}</div>
           <div class="qty">
             <button data-dec="${i.id}">−</button><span>${i.qty}</span><button data-inc="${i.id}">+</button>

@@ -31,7 +31,11 @@ var ADDON = /^(pakai|pasang|penambahan)\s/i;
 
 // Urutan kategori yang diutamakan
 var ORDER = ['Hair Cut', 'Blow & Styling', 'Coloring & Highlight', 'Perm & Rebonding',
-  'Hair Spa & Treatment', 'Facial', 'Nail Art', 'Lulur', 'Whitening', 'Paket Layanan', 'Lainnya'];
+  'Hair Spa & Treatment', 'Hair Extension', 'Nail Art', 'Perawatan Badan & Wajah',
+  'Paket Layanan', 'Lainnya',
+  // Kategori lama dari export POS sebelumnya — dipertahankan supaya urutan tetap
+  // masuk akal kalau ada yang meng-import CSV versi lama.
+  'Facial', 'Lulur', 'Whitening'];
 
 // Harga yang benar-benar dibayar (promo kalau ada dan memang lebih murah).
 function hargaEfektif(it) {
@@ -54,8 +58,10 @@ function barisHtml(it) {
   var priceHtml = it.promo && it.promo < it.price
     ? '<span class="was">' + rupiah(it.price) + '</span><span class="now">' + rupiah(it.promo) + '</span>'
     : rupiah(it.price);
-  return '<div class="price-row">' +
-    '<span class="pn">' + esc(it.name) + (d ? ' <span class="pd">· ' + esc(d) + '</span>' : '') + '</span>' +
+  var ket = it.desc ? '<span class="pk">' + esc(it.desc) + '</span>' : '';
+  return '<div class="price-row' + (ket ? ' has-desc' : '') + '">' +
+    '<span class="pn">' + esc(it.name) + (d ? ' <span class="pd">· ' + esc(d) + '</span>' : '') +
+      ket + '</span>' +
     '<span class="leader"></span>' +
     '<span class="pp">' + priceHtml + '</span>' +
     '</div>';
@@ -104,7 +110,9 @@ function offerCatalog(list) {
         itemListElement: g.groups[cat].map(function (it) {
           return {
             '@type': 'Offer',
-            itemOffered: { '@type': 'Service', name: it.name },
+            itemOffered: it.desc
+              ? { '@type': 'Service', name: it.name, description: it.desc }
+              : { '@type': 'Service', name: it.name },
             price: String(hargaEfektif(it)),
             priceCurrency: 'IDR'
           };
