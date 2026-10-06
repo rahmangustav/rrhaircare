@@ -181,6 +181,14 @@ body.menu-open .mobile-menu > a:nth-child(8) { transition-delay: .28s; }
 @keyframes bob { 50% { transform: translateY(5px); } }
 .st-count { position: absolute; z-index: 4; right: var(--pad); bottom: 26px; font: 600 .7rem var(--head); letter-spacing: .2em; color: var(--muted); }
 .st-count b { color: var(--gold-l); font-weight: 700; }
+.st-panel[data-scene="3"] .h-xl { font-size: clamp(2rem, 4.2vw, 4rem); }
+.st-langkah { list-style: none; display: flex; gap: 8px; margin: -8px 0 34px; flex-wrap: wrap; }
+.st-langkah li { display: flex; align-items: center; gap: 10px; padding: 9px 14px; border: 1px solid var(--line-2); border-radius: 2px; font: 600 .66rem var(--head); letter-spacing: .14em; text-transform: uppercase; color: var(--muted-2); transition: color .4s, border-color .4s, background .4s; }
+.st-langkah li b { color: var(--muted-2); font-weight: 700; transition: color .4s; }
+.st-langkah li.lewat { color: var(--muted); }
+.st-langkah li.lewat b { color: var(--gold); }
+.st-langkah li.on { color: #1A140C; background: var(--grad-gold); border-color: transparent; }
+.st-langkah li.on b { color: #1A140C; }
 /* Tanpa JS: adegan tampil berurutan biasa */
 html:not(.js) .story { height: auto; }
 html:not(.js) .stage { position: relative; height: auto; overflow: visible; }
@@ -386,6 +394,9 @@ footer { background: var(--bg); padding: clamp(70px, 9vw, 120px) 0 30px; border-
   .st-count { bottom: 30px; }
   .st-dots { left: var(--pad); transform: none; bottom: 35px; }
   .st-prices { margin-bottom: 22px; }
+  .st-langkah { margin: -4px 0 22px; gap: 6px; }
+  .st-panel[data-scene="3"] .lead { display: none; }
+  .st-langkah li { padding: 7px 10px; font-size: .56rem; letter-spacing: .1em; }
   .st-prices li { padding: 11px 0; }
   .sec-head { grid-template-columns: 1fr; }
   .sec-head .lead { justify-self: start; }

@@ -1,7 +1,7 @@
 // Interaksi landing RR Hair Care (versi sinematik, Okt 2026).
 // - Smooth scroll (Lenis) kalau tersedia.
 // - Bagian "story": 5 adegan dipasang sticky; posisi scroll diubah jadi angka
-//   adegan (window.RR_STORY.p, 0..4) yang juga dibaca js/rr3d.js untuk objek 3D.
+//   adegan (window.RR_STORY.p, 0..5; .prog[i] = kemajuan di dalam adegan i) yang juga dibaca js/rr3d.js untuk objek 3D.
 // - Navbar, menu HP, animasi muncul, kartu layanan → daftar harga, galeri geser,
 //   video hanya diputar saat terlihat.
 // Konten tetap terlihat kalau skrip gagal (kelas .js di <head> + jaring pengaman).
@@ -44,22 +44,40 @@
 
   // ── STORY ──
   var story = $('#hero'), panels = $$('.st-panel'), N = panels.length || 5;
+  var langkah = $$('#stLangkah li'), tot = $('#stTot');
   var vid = $('#stVideo'), ring = $('#stRing'), hint = $('#stHint'), num = $('#stNum');
   var dots = $$('#stDots button');
-  window.RR_STORY = { p: 0, aktif: true };
+  // Panjang "diam" tiap adegan (satuan = 75vh scroll). Adegan potong rambut
+  // (indeks 3) dibuat panjang karena animasinya berjalan mengikuti scroll.
+  var TAHAN = [0.55, 0.55, 0.55, 2.6, 0.55, 0.55].slice(0, N), TRANS = 0.9, SATUAN = 75;
+  while (TAHAN.length < N) TAHAN.push(0.55);
+  var TOTAL = TAHAN.reduce(function (a, b) { return a + b; }, 0) + TRANS * (N - 1);
+  if (story) story.style.height = (TOTAL * SATUAN + 100) + 'vh';
+  window.RR_STORY = { p: 0, aktif: true, prog: TAHAN.map(function () { return 0; }) };
 
   function posisiStory() {
     var r = story.getBoundingClientRect();
     var jarak = story.offsetHeight - window.innerHeight;
-    var f = clamp(-r.top / jarak, 0, 1) * (N - 1);       // 0..N-1, linier
-    // Tiap adegan "berhenti" sebentar: transisi hanya di tengah tiap langkah.
-    var i = Math.floor(f), sisa = f - i;
-    var p = i + halus((sisa - 0.28) / 0.44);
-    return { p: Math.min(p, N - 1), terlihat: r.bottom > 0 };
+    var x = clamp(-r.top / jarak, 0, 1) * TOTAL, p = N - 1, prog = [];
+    for (var i = 0, sisa = x, ketemu = false; i < N; i++) {
+      if (ketemu) { prog.push(0); continue; }
+      if (sisa <= TAHAN[i]) { p = i; prog.push(sisa / TAHAN[i]); ketemu = true; continue; }
+      sisa -= TAHAN[i]; prog.push(1);
+      if (i < N - 1 && sisa <= TRANS) { p = i + halus(sisa / TRANS); ketemu = true; continue; }
+      sisa -= TRANS;
+    }
+    return { p: p, prog: prog, terlihat: r.bottom > 0 };
   }
+  // Posisi scroll awal "diam" adegan ke-i (untuk tombol titik).
+  function awalAdegan(i) {
+    var x = 0; for (var k = 0; k < i; k++) x += TAHAN[k] + TRANS;
+    return story.offsetTop + (story.offsetHeight - window.innerHeight) * (x / TOTAL);
+  }
+
   function lukisStory() {
     var s = posisiStory(), p = s.p;
-    window.RR_STORY.p = p; window.RR_STORY.aktif = s.terlihat;
+    window.RR_STORY.p = p; window.RR_STORY.aktif = s.terlihat; window.RR_STORY.prog = s.prog;
+    if (langkah.length) { var u = s.prog[3] || 0, aktifL = u < 0.12 ? 0 : (u < 0.56 ? 1 : 2); langkah.forEach(function (li, k) { li.classList.toggle('on', k === aktifL); li.classList.toggle('lewat', k < aktifL); }); }
     panels.forEach(function (el, i) {
       var d = p - i, a = Math.abs(d);
       var o = clamp(1 - a * 1.7, 0, 1);
@@ -86,12 +104,12 @@
     var aktif = Math.round(p);
     dots.forEach(function (b, i) { b.classList.toggle('on', i === aktif); });
     if (num) num.textContent = '0' + (aktif + 1);
+    if (tot) tot.textContent = '0' + N;
     if (hint) hint.style.opacity = p < 0.15 ? 1 : 0;
   }
   dots.forEach(function (b, i) {
     b.addEventListener('click', function () {
-      var jarak = story.offsetHeight - window.innerHeight;
-      keTitik(story.offsetTop + jarak * (i / (N - 1)));
+      keTitik(awalAdegan(i) + 2);
     });
   });
 
