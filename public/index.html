@@ -30,7 +30,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/css/rr.css?v=20261006b"/>
+  <link rel="stylesheet" href="/css/rr.css?v=20261006c"/>
   <meta name="theme-color" content="#0B0907"/>
   <link rel="modulepreload" href="/js/vendor/three.module.min.js"/>
   <script type="application/ld+json">
@@ -78,7 +78,19 @@
       { "@type": "Person", "name": "Rani Apriyani" },
       { "@type": "Person", "name": "Ratih Handayani" }
     ],
-    "foundingDate": "2023-12-15"
+    "foundingDate": "2023-12-15",
+    "department": [{
+      "@type": "HairSalon",
+      "name": "RR Hair Care — Salon 2",
+      "telephone": "+6281386291552",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Jl. B Raya No.55B, RT.5/RW.9, Rawabadak Utara",
+        "addressLocality": "Koja, Jakarta Utara",
+        "postalCode": "14230",
+        "addressCountry": "ID"
+      }
+    }]
   }
   </script>
   <!-- prerender:layanan-schema:mulai -->
@@ -158,7 +170,7 @@
       </div>
       <div class="st-meta">
         <div><strong>Setiap hari 09.00–21.00</strong>termasuk akhir pekan</div>
-        <div><strong>Jl. B Raya No. 6</strong>Rawabadak Utara, Koja</div>
+        <div><strong>2 salon di Jl. B Raya</strong>No. 6 &amp; No. 55B, Rawabadak Utara</div>
       </div>
     </div>
 
@@ -191,9 +203,12 @@
         <li><b>02</b>Potong berlapis</li>
         <li><b>03</b>Styling butterfly</li>
       </ol>
+      <ul class="st-prices">
+        <li><span class="n">Butterfly cut · Haircut Layer Modern</span><span class="dots"></span><span class="p" data-harga-layanan="Haircut Layer Modern">Rp50.000</span></li>
+      </ul>
       <div class="btn-group">
         <a href="#booking" class="btn btn-gold">Booking potong</a>
-        <a href="#harga" class="link-arrow">Harga potong <span>→</span></a>
+        <a href="#harga" class="link-arrow">Semua harga potong <span>→</span></a>
       </div>
     </div>
 
@@ -343,7 +358,7 @@
       <p>RR Hair Care dibuka <strong>15 Desember 2023</strong> di Rawabadak Utara, Koja, oleh
         <strong>Rani Apriyani</strong> dan <strong>Ratih Handayani</strong> — dua kakak beradik yang
         sama-sama pegang gunting.</p>
-      <p>Salonnya buka setiap hari sampai jam sembilan malam, termasuk hari libur. Harga ditulis
+      <p>Sekarang ada dua salon yang berdekatan di Jl. B Raya — No. 6 dan No. 55B. Buka setiap hari sampai jam sembilan malam, termasuk hari libur. Harga ditulis
         terbuka di halaman ini supaya tidak ada kejutan di kasir.</p>
       <div class="founders">
         <div class="founder-card">
@@ -386,7 +401,8 @@
       <ul class="bk-info">
         <li><span>WhatsApp</span><a href="https://wa.me/6281386291552" target="_blank" rel="noopener" data-wa="booking-info">0813-8629-1552</a></li>
         <li><span>Jam buka</span>Setiap hari, 09.00–21.00 WIB</li>
-        <li><span>Alamat</span>Jl. B Raya No. 6, Rawabadak Utara, Koja</li>
+        <li><span>Salon 1</span>Jl. B Raya No. 6, RT 8/RW 5, Rawabadak Utara, Koja</li>
+        <li><span>Salon 2</span>Jl. B Raya No. 55B, RT 5/RW 9, Rawabadak Utara, Koja</li>
       </ul>
     </div>
     <div class="booking-form fade-up" id="bookingForm">
@@ -446,6 +462,14 @@
             <option value="">-- Tidak Ada Preferensi --</option>
           </select>
         </div>
+      </div>
+      <div class="form-group">
+        <label for="salon">Salon</label>
+        <select id="salon">
+          <option value="">-- Mana saja yang kosong --</option>
+          <option>Salon 1 — Jl. B Raya No. 6</option>
+          <option>Salon 2 — Jl. B Raya No. 55B</option>
+        </select>
       </div>
       <div class="form-group">
         <label for="catatan">Catatan tambahan</label>
@@ -515,7 +539,7 @@
         <span class="eyebrow">Lokasi</span>
         <h2 class="h-lg">Alamat &amp; jam buka</h2>
       </div>
-      <p class="lead">Di Rawabadak Utara, Koja. Datang langsung boleh, booking dulu lebih aman — terutama akhir pekan.</p>
+      <p class="lead">Dua salon berdekatan di Jl. B Raya, Rawabadak Utara, Koja. Datang langsung boleh, booking dulu lebih aman — terutama akhir pekan.</p>
     </div>
   </div>
   <div class="map-wrapper">
@@ -526,8 +550,12 @@
     </div>
     <div class="map-card">
       <div class="map-info-item">
-        <div class="map-info-label">Alamat</div>
-        <div class="map-info-value">Jl. B Raya No.6, RT.8/RW.5<br>Rawabadak Utara, Koja<br>Jakarta Utara 14230</div>
+        <div class="map-info-label">Salon 1</div>
+        <div class="map-info-value">Jl. B Raya No. 6, RT 8/RW 5<br>Rawabadak Utara, Koja, Jakarta Utara 14230</div>
+      </div>
+      <div class="map-info-item">
+        <div class="map-info-label">Salon 2</div>
+        <div class="map-info-value">Jl. B Raya No. 55B, RT 5/RW 9<br>Rawabadak Utara, Koja, Jakarta Utara 14230</div>
       </div>
       <div class="map-info-item">
         <div class="map-info-label">Jam operasional</div>
@@ -538,7 +566,8 @@
         <div class="map-info-value"><a href="https://wa.me/6281386291552" target="_blank" rel="noopener" data-wa="lokasi">0813-8629-1552</a></div>
       </div>
       <div class="map-actions">
-        <a class="map-btn map-btn-utama" href="https://www.google.com/maps/dir/?api=1&amp;destination=-6.1175292,106.9003537" target="_blank" rel="noopener">Rute ke salon</a>
+        <a class="map-btn map-btn-utama" href="https://www.google.com/maps/dir/?api=1&amp;destination=-6.1175292,106.9003537" target="_blank" rel="noopener">Rute salon 1</a>
+        <a class="map-btn map-btn-utama" href="https://www.google.com/maps/search/?api=1&amp;query=Jl.+B+Raya+No.55B,+Rawabadak+Utara,+Koja,+Jakarta+Utara" target="_blank" rel="noopener">Rute salon 2</a>
         <a class="map-btn" href="https://maps.google.com/?cid=4641963643779539975" target="_blank" rel="noopener">Ulasan Google</a>
         <a class="map-btn" href="https://www.google.com/maps/place//data=!4m3!3m2!1s0x2e6a1feb932d77fd:0x406b9156ffc1e407!12e1" target="_blank" rel="noopener">Tulis ulasan</a>
       </div>
@@ -583,7 +612,7 @@
       </div>
       <div class="footer-col">
         <h4>Booking</h4>
-        <p>Jl. B Raya No. 6, Rawabadak Utara, Koja. Setiap hari 09.00–21.00 WIB.</p>
+        <p>Salon 1: Jl. B Raya No. 6 · Salon 2: Jl. B Raya No. 55B — Rawabadak Utara, Koja. Setiap hari 09.00–21.00 WIB.</p>
         <a href="#booking" class="btn btn-gold">Booking sekarang</a>
       </div>
     </div>
@@ -636,6 +665,8 @@
     const jam = document.getElementById('jam').value;
     const stylist = document.getElementById('stylist').value;
     const catatan = document.getElementById('catatan').value.trim();
+    const salonEl = document.getElementById('salon');
+    const salon = salonEl ? salonEl.value : '';
 
     if (!nama || !phone || !layanan || !tanggal || !jam) {
       showToast('⚠️ Mohon lengkapi semua field yang wajib diisi.');
@@ -653,6 +684,7 @@
     pesan += `👤 *Nama:* ${nama}\n`;
     pesan += `📱 *WhatsApp:* ${phone}\n`;
     pesan += `✂️ *Layanan:* ${layanan}\n`;
+    if (salon) pesan += `📍 *Salon:* ${salon}\n`;
     pesan += `📅 *Tanggal:* ${tglFormatted}\n`;
     pesan += `🕐 *Jam:* ${jam}\n`;
     if (stylist) pesan += `💇 *Stylist:* ${stylist}\n`;
@@ -673,9 +705,9 @@
   }
 </script>
 <script src="/js/vendor/lenis.min.js" defer></script>
-<script src="/js/rr.js?v=20261006b" defer></script>
+<script src="/js/rr.js?v=20261006c" defer></script>
 <script type="importmap">{ "imports": { "three": "/js/vendor/three.module.min.js", "three/addons/": "/js/vendor/addons/" } }</script>
-<script type="module" src="/js/rr3d.js?v=20261006b"></script>
+<script type="module" src="/js/rr3d.js?v=20261006c"></script>
 <script src="/js/hit.js" defer></script>
 <script src="/js/goal.js" defer></script>
 <script src="/js/img-cdn.js" defer></script>
