@@ -147,26 +147,34 @@ function mulai() {
   const rambut = new THREE.Group(); scene.add(rambut);
   const kepala = new THREE.Group(); rambut.add(kepala);
   const RX = 0.78, RY = 0.95, RZ = 0.85, CY = 0.55;
-  const tengkorak = new THREE.Mesh(new THREE.SphereGeometry(1, 48, 32), new THREE.MeshStandardMaterial({ color: 0x1a110b, roughness: 0.8 }));
+  const tengkorak = new THREE.Mesh(new THREE.SphereGeometry(1, 48, 32), new THREE.MeshStandardMaterial({ color: 0x1a110b, roughness: 0.8, transparent: true }));
   tengkorak.scale.set(RX, RY, RZ); tengkorak.position.y = CY; kepala.add(tengkorak);
   const PROFIL = [[0, -2.1], [1.28, -2.1], [1.34, -1.55], [1.22, -1.14], [0.78, -0.93], [0.37, -0.8], [0.3, -0.45], [0.3, -0.1], [0, -0.1]];
   const BZ = 0.55;
   const badan = new THREE.Mesh(new THREE.LatheGeometry(v2(PROFIL), 64),
-    new THREE.MeshPhysicalMaterial({ color: 0x4a3a2e, metalness: 0.15, roughness: 0.55, clearcoat: 0.15, clearcoatRoughness: 0.4, sheen: 0.4, sheenColor: new THREE.Color(0xc9a061) }));
+    new THREE.MeshPhysicalMaterial({ color: 0x4a3a2e, metalness: 0.15, roughness: 0.55, clearcoat: 0.15, clearcoatRoughness: 0.4, sheen: 0.4, sheenColor: new THREE.Color(0xc9a061), transparent: true }));
   badan.scale.z = BZ; kepala.add(badan);
   // Jari-jari badan pada ketinggian y, arah sudut a (badan dipipihkan di sumbu z)
-  function jariBadan(y, a) {
+  // Dipanggil puluhan ribu kali per frame → pakai tabel, bukan hitung ulang.
+  const TAB_N = 128, TAB_Y0 = 0, TAB_Y1 = -2.8, tabR = new Float32Array(TAB_N);
+  for (let j = 0; j < TAB_N; j++) {
+    const y = TAB_Y0 + (TAB_Y1 - TAB_Y0) * (j / (TAB_N - 1));
     let r = 0;
     for (let i = 1; i < PROFIL.length - 1; i++) {
       const [r1, y1] = PROFIL[i], [r2, y2] = PROFIL[i + 1];
       if ((y <= y1 && y >= y2) || (y >= y1 && y <= y2)) { r = r1 + (r2 - r1) * ((y - y1) / ((y2 - y1) || 1)); break; }
     }
     if (y < -1.55) r = 1.34;
-    const sa = Math.sin(a), ca = Math.cos(a);
-    return r / Math.sqrt(sa * sa + (ca * ca) / (BZ * BZ));
+    tabR[j] = r;
+  }
+  // fA = faktor arah (badan dipipihkan di sumbu z), dihitung sekali per helai
+  function jariBadan(y, fA) {
+    let j = Math.round((y - TAB_Y0) / (TAB_Y1 - TAB_Y0) * (TAB_N - 1));
+    j = j < 0 ? 0 : (j >= TAB_N ? TAB_N - 1 : j);
+    return tabR[j] * fA;
   }
 
-  const NS = (canvas.clientWidth < 760) ? 1000 : 1600, K1 = 7, K2 = 18, KP = K1 + K2, SEG = KP - 1;
+  const NS = (canvas.clientWidth < 760) ? 700 : 1300, K1 = 7, K2 = 18, KP = K1 + K2, SEG = KP - 1;
   const helai = [];
   for (let i = 0; i < NS; i++) {
     const phi = (Math.random() * 2 - 1) * Math.PI;
@@ -179,7 +187,9 @@ function mulai() {
       lapis: 1.03 + 0.06 * (1 - lf) + Math.random() * 0.015,
       L: 2.2 + 0.35 * Math.cos(phi) + Math.random() * 0.18 - (depan ? 0.2 : 0),   // ujung melengkung U
       untai: (Math.round(phi * 15) / 15 - phi) * 0.8,                            // helai berkelompok jadi untaian
-      jatuhX: (Math.random() - 0.5) * 1.2, jatuhV: 0.7 + Math.random() * 0.8,
+      jatuhX: (Math.random() - 0.5) * 0.35, jatuhV: 0.8 + Math.random() * 0.5,
+      punyaEkor: Math.random() < 0.35,   // tidak semua helai menjatuhkan potongan
+      fA: 1 / Math.sqrt(Math.sin(phi) ** 2 + (Math.cos(phi) ** 2) / (BZ * BZ)),
       Lb: (depan ? 0.38 + 0.25 * lf : 0.5 + 0.85 * lf) + Math.random() * 0.09,
       ikal: lf < 0.48 ? 1 : -1,
       vol: 0.8 + Math.random() * 0.4,
@@ -188,7 +198,7 @@ function mulai() {
     });
   }
   const posR = new Float32Array(NS * SEG * 6), warR = new Float32Array(NS * SEG * 6);
-  const ekorN = 5, posE = new Float32Array(NS * (ekorN - 1) * 6), warE = new Float32Array(NS * (ekorN - 1) * 6);
+  const ekorN = 5, posE = new Float32Array(NS * (ekorN - 1) * 6), warE = new Float32Array(NS * (ekorN - 1) * 6), warE0 = new Float32Array(NS * (ekorN - 1) * 6);
   const cAkar = new THREE.Color(0x1f130b), cTengah = new THREE.Color(0x5a3a20), cUjung = new THREE.Color(0xb88a55), cKilau = new THREE.Color(0xe8c287);
   const cc = new THREE.Color();
   helai.forEach((h, i) => {
@@ -206,6 +216,7 @@ function mulai() {
     }
     for (let j = 0; j < (ekorN - 1) * 2; j++) { const o = (i * (ekorN - 1) * 2 + j) * 3; cc.copy(kilau ? cKilau : cUjung).multiplyScalar(terang); warE[o] = cc.r; warE[o + 1] = cc.g; warE[o + 2] = cc.b; }
   });
+  warE0.set(warE);
   const gR = new THREE.BufferGeometry();
   gR.setAttribute('position', new THREE.BufferAttribute(posR, 3).setUsage(THREE.DynamicDrawUsage));
   gR.setAttribute('color', new THREE.BufferAttribute(warR, 3));
@@ -213,7 +224,7 @@ function mulai() {
   garisRambut.frustumCulled = false; kepala.add(garisRambut);
   const gE = new THREE.BufferGeometry();
   gE.setAttribute('position', new THREE.BufferAttribute(posE, 3).setUsage(THREE.DynamicDrawUsage));
-  gE.setAttribute('color', new THREE.BufferAttribute(warE, 3));
+  gE.setAttribute('color', new THREE.BufferAttribute(warE, 3).setUsage(THREE.DynamicDrawUsage));
   const ekor = new THREE.LineSegments(gE, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.9 }));
   ekor.frustumCulled = false; kepala.add(ekor);
 
@@ -228,7 +239,6 @@ function mulai() {
     }
     const dx = P[(K1 - 1) * 3], dy = P[(K1 - 1) * 3 + 1], dz = P[(K1 - 1) * 3 + 2];
     const r0 = Math.hypot(dx, dz) || 0.001, ux = dx / r0, uz = dz / r0;
-    const ayun = Math.sin(t * 1.1 + h.seed) * 0.025;
     for (let k = 1; k <= K2; k++) {
       const u = k / K2, idx = (K1 - 1 + k) * 3;
       const radS = r0 + 0.05 * u, yS = dy - len * u;
@@ -237,7 +247,7 @@ function mulai() {
       const yB = dy - len * u + 0.22 * k2 * k2 * len;
       let rad = radS + (radB - radS) * m;
       const y = yS + (yB - yS) * m;
-      rad = Math.max(rad, jariBadan(y, h.phi) + 0.04) + ayun * u;
+      rad = Math.max(rad, jariBadan(y, h.fA) + 0.04);
       // untaian + gelombang lembut (gelombang hanya di bentuk butterfly)
       const dl = h.untai * u * (1 + 0.4 * m) + m * 0.05 * Math.sin(u * 4.5 + h.seed) * u;
       const cs = Math.cos(dl), sn = Math.sin(dl);
@@ -254,12 +264,17 @@ function mulai() {
     }
   }
   const vTmp = new THREE.Vector3();
-  let potongTerakhir = -1;
+  let uLama = -1, adaEkor = false;
+  const BAWAH = -2.15;   // potongan menghilang di balik bawah badan, tidak menutupi teks
   // u: kemajuan adegan 0..1 → hasil: sudut gunting (null kalau tidak memotong)
   function animasiRambut(u, t, now) {
     const pot = THREE.MathUtils.smoothstep(u, 0.12, 0.55);   // sapuan potong
     const m = THREE.MathUtils.smoothstep(u, 0.58, 0.86);     // styling butterfly
     const phiC = -Math.PI + 2 * Math.PI * pot;
+    // Bentuk rambut hanya bergantung pada u: kalau u tidak berubah dan tidak ada
+    // potongan yang sedang jatuh, buffer tidak perlu dihitung ulang.
+    if (Math.abs(u - uLama) < 1e-5 && !adaEkor) return (u > 0.06 && u < 0.62) ? phiC : null;
+    uLama = u; adaEkor = false;
     for (let i = 0; i < NS; i++) {
       const h = helai[i];
       const harusPotong = pot > 0 && h.phi < phiC;
@@ -268,28 +283,32 @@ function mulai() {
       const len = h.dipotong >= 0 ? h.Lb : h.L;
       const d = bentukHelai(h, len, m, t);
       tulisHelai(i);
-      // potongan yang jatuh
+      // potongan yang jatuh (sebagian helai saja), memudar lalu hilang
       const o0 = i * (ekorN - 1) * 6;
       const dt = h.dipotong >= 0 ? now - h.dipotong : 99;
-      if (dt < 1.5 && !diam) {
-        const jatuh = 2.4 * h.jatuhV * dt * dt + 0.25 * dt;
+      const hidup = h.punyaEkor && dt < 1.1 && !diam;
+      if (hidup) {
+        adaEkor = true;
+        const jatuh = 2.6 * h.jatuhV * dt * dt + 0.2 * dt, pudar = 1 - dt / 1.1;
         for (let k = 0; k < ekorN - 1; k++) {
           for (let e = 0; e < 2; e++) {
             const uu = (k + e) / (ekorN - 1);
             const ll = h.Lb + (h.L - h.Lb) * uu;
-            const rad = Math.max(d.r0 + 0.05 * (ll / h.L), jariBadan(d.dy - ll, h.phi) + 0.04) + 0.5 * dt;
+            const y = d.dy - ll - jatuh;
+            const rad = Math.max(d.r0 + 0.05 * (ll / h.L), jariBadan(d.dy - ll, h.fA) + 0.04) + 0.18 * dt;
             const o = o0 + k * 6 + e * 3;
-            // potongan berputar sedikit saat jatuh: ujung bawah tertinggal
-            const putar = (ll - h.Lb) * Math.sin(dt * 2.2 * h.jatuhV) * 0.6;
-            posE[o] = d.ux * rad + h.jatuhX * dt + putar * d.uz; posE[o + 1] = d.dy - ll - jatuh + putar * 0.3; posE[o + 2] = d.uz * rad - putar * d.ux;
+            if (y < BAWAH) { posE[o] = posE[o + 1] = posE[o + 2] = 0; continue; }
+            posE[o] = d.ux * rad + h.jatuhX * dt; posE[o + 1] = y; posE[o + 2] = d.uz * rad;
+            warE[o] = warE0[o] * pudar; warE[o + 1] = warE0[o + 1] * pudar; warE[o + 2] = warE0[o + 2] * pudar;
           }
         }
-      } else {
+      } else if (posE[o0 + 1] !== 0 || posE[o0 + 4] !== 0) {
         for (let k = 0; k < (ekorN - 1) * 6; k++) posE[o0 + k] = 0;
       }
     }
     gR.attributes.position.needsUpdate = true;
     gE.attributes.position.needsUpdate = true;
+    gE.attributes.color.needsUpdate = true;
     return (u > 0.06 && u < 0.62) ? phiC : null;
   }
 
@@ -297,7 +316,7 @@ function mulai() {
   const K = {
     gunting: [[3, 2.6, -3, 0, 0.3, 0.6, -0.8], [-0.9, 0.55, 0, 0.82, 0.35, 0.5, -0.55], [-0.3, 0.05, 0.8, 1.18, 0.15, -0.25, 0.42], [-1.9, 1.5, 0.6, 0.42, 0.3, 0.2, -0.6], [2.6, 2.3, -2.5, 0.45, 0.6, 1.2, 0.2], [-1.55, 1.6, 0.4, 0.42, 0.4, 0.3, -1.0]],
     sisir: [[2.5, -3, -2, 0, 0.4, 0.2, 0.9], [1.0, -0.75, -0.4, 0.82, 0.45, 0.25, 0.85], [2.8, -2.4, -2.5, 0.35, 0.8, 0.6, 1.4], [3.5, -3, -3, 0, 0.8, 0.6, 1.4], [3.5, -3, -3, 0, 0.8, 0.6, 1.4], [3.5, -3, -3, 0, 0.8, 0.6, 1.4]],
-    jar: [[1.5, 2, -4, 0, 0.2, 0, 0], [2.3, 1.55, -2.2, 0.46, 0.25, -0.4, 0.12], [3, 1.2, -3.5, 0.3, 0.3, 0, 0.2], [3.4, 1.6, -4, 0, 0.3, 0, 0.2], [0, -0.15, 0.6, 1.3, 0.22, 0, 0], [-2.5, -2.5, -2, 0, 0.2, 0, 0]],
+    jar: [[1.5, 2, -4, 0, 0.2, 0, 0], [2.3, 1.55, -2.2, 0.46, 0.25, -0.4, 0.12], [3, 1.2, -3.5, 0.3, 0.3, 0, 0.2], [3.4, 1.6, -4, 0, 0.3, 0, 0.2], [0, -0.15, 0.6, 1.3, 0.22, 0, 0], [-4.2, 0.6, -3, 0, 0.2, 0, 0]],
   };
   const tmp = [0, 0, 0, 0, 0, 0, 0];
   function ambil(arr, p) {
@@ -355,12 +374,14 @@ function mulai() {
     if (wCraft > 0) gunting.rotation.y += wCraft * Math.sin(t * 0.4) * 0.35;
     // Adegan 3: potong rambut → butterfly
     const wH = Math.max(0, 1 - Math.abs(p - 3) * 1.25);
-    rambut.visible = wH > 0.01;
+    rambut.visible = wH > 0.03;
     if (rambut.visible) {
       const u = (st.prog && st.prog[3]) || (p > 3 ? 1 : 0);
       const e = THREE.MathUtils.smoothstep(wH, 0, 1);
-      rambut.position.set(jx, hy + 0.5 * sH - (1 - e) * 2.2, (1 - e) * -2);
-      rambut.scale.setScalar(sH * (0.75 + 0.25 * e));
+      rambut.position.set(jx, hy + 0.5 * sH, (1 - e) * -1);
+      rambut.scale.setScalar(sH * (0.9 + 0.1 * e));
+      garisRambut.material.opacity = 0.92 * e; ekor.material.opacity = 0.9 * e;
+      tengkorak.material.opacity = e; badan.material.opacity = e;
       kepala.rotation.y = -0.55 + u * 1.1 + (diam ? 0 : Math.sin(t * 0.5) * 0.06);
       kepala.rotation.x = 0.08;
       const phiC = animasiRambut(u, t, jam.elapsedTime);
