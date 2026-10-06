@@ -35,7 +35,8 @@
     var cap = '';
     if (container.classList.contains('gallery-item')) {
       var span = container.querySelector('.gallery-overlay span');
-      if (span && span.textContent && span.textContent.trim() !== 'Lihat') cap = span.textContent.trim();
+      var t = span && span.textContent ? span.textContent.trim() : '';
+      if (t && t !== 'Lihat' && t !== 'RR Hair Care') cap = t;
     }
     if (!cap && img.alt && img.alt !== 'RR Hair Care') cap = img.alt;
     // Thumbnail dilayani versi kecil lewat Image CDN; lightbox pakai versi

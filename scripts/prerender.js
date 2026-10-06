@@ -86,7 +86,17 @@ let angka = 0;
 html = html.replace(/(<span data-jumlah-layanan>)[^<]*(<\/span>)/g,
   (_m, a, b) => { angka++; return a + list.length + b; });
 
-// 4. schema.org OfferCatalog, menempel ke entitas salon lewat @id.
+// 4. Harga satuan yang disebut di teks (mis. bagian Inaura):
+//    <span data-harga-layanan="Nama Layanan">Rp..</span>
+let hargaSatuan = 0;
+html = html.replace(/(<span[^>]*data-harga-layanan="([^"]+)"[^>]*>)[^<]*(<\/span>)/g, (m, a, nama, b) => {
+  const it = list.find((x) => x.name === nama.replace(/&amp;/g, '&'));
+  if (!it) return m;
+  hargaSatuan++;
+  return a + R.rupiah(R.hargaEfektif(it)) + b;
+});
+
+// 5. schema.org OfferCatalog, menempel ke entitas salon lewat @id.
 const schema = {
   '@context': 'https://schema.org',
   '@id': 'https://rrhaircare.id/#salon',
@@ -95,7 +105,7 @@ const schema = {
 html = gantiBlok(html, 'layanan-schema',
   '\n  <script type="application/ld+json">\n  ' + JSON.stringify(schema) + '\n  </script>\n  ');
 
-log(`selesai: ${list.length} layanan, ${kartu} kartu, ${angka} penanda angka, schema OfferCatalog ditanam`);
+log(`selesai: ${list.length} layanan, ${kartu} kartu, ${angka} penanda angka, ${hargaSatuan} harga satuan, schema OfferCatalog ditanam`);
 
 // ── Foto tetap: hero & about ditanam, bukan menunggu JS ──────────────────────
 // Foto hero adalah elemen terbesar di layar (LCP). Sebelumnya baru dipasang
@@ -118,7 +128,7 @@ try {
 }
 log(`slot foto tetap: ${Object.keys(siteImages).length} terisi, galeri ${galeri.length} foto`);
 
-const LEBAR = { hero: 840, about: 800 };
+const LEBAR = { hero: 520, about: 800 };
 function imgHtml(url, alt, lebar, hero) {
   const src = C.fotoCdn(url, lebar);
   return `<img src="${R.esc(src)}" data-full="${R.esc(C.fotoCdn(url, 1400))}" alt="${R.esc(alt)}"`
@@ -135,7 +145,7 @@ function sumberSlot(slot) {
   return null;
 }
 
-let fotoHero = null, slotIsi = 0, slotSembunyi = 0;
+let slotIsi = 0, slotSembunyi = 0;
 html = html.replace(/<div([^>]*?)data-slot="([^"]+)"([^>]*?)>[\s\S]*?<\/div>/g, (m, a, slot, b) => {
   const src = sumberSlot(slot);
   // Atribut hidden dari hasil build sebelumnya dilepas dulu supaya skrip ini
@@ -149,15 +159,16 @@ html = html.replace(/<div([^>]*?)data-slot="([^"]+)"([^>]*?)>[\s\S]*?<\/div>/g, 
     return `<div${a}data-slot="${slot}"${sisa} hidden></div>`;
   }
   slotIsi++;
-  if (slot === 'hero') fotoHero = C.fotoCdn(src.url, LEBAR.hero);
+  // Sejak tampilan Okt 2026 pembuka halaman adalah video; slot "hero" kini
+  // foto "Karya terbaru" di bawah lipatan — jangan diprioritaskan/di-preload.
   return `<div${a}data-slot="${slot}"${sisa}>`
-    + imgHtml(src.url, src.alt, LEBAR[slot] || 720, slot === 'hero') + '</div>';
+    + imgHtml(src.url, src.alt, LEBAR[slot] || 720, false) + '</div>';
 });
 
-html = gantiBlok(html, 'preload-hero', fotoHero
-  ? `\n  <link rel="preload" as="image" href="${R.esc(fotoHero)}" fetchpriority="high"/>\n  `
-  : '');
-log(`foto tetap: ${slotIsi} slot diisi, ${slotSembunyi} slot kosong disembunyikan, preload hero: ${fotoHero ? 'ya' : 'tidak'}`);
+// Elemen terbesar di layar pertama = poster video hero (berkas statis).
+html = gantiBlok(html, 'preload-hero',
+  '\n  <link rel="preload" as="image" href="/img/hero-poster.jpg" fetchpriority="high"/>\n  ');
+log(`foto tetap: ${slotIsi} slot diisi, ${slotSembunyi} slot kosong disembunyikan`);
 
 writeFileSync(HTML, html);
 

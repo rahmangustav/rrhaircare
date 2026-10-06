@@ -24,7 +24,7 @@
     // Grid galeri. Kalau belum ada foto, placeholder bawaan dibiarkan.
     if (galeri.length) {
       grid.innerHTML = galeri.map(function (g) {
-        var cap = g.caption ? esc(g.caption) : 'Lihat';
+        var cap = g.caption ? esc(g.caption) : 'RR Hair Care';
         return '<div class="gallery-item">' +
           imgTag(g.image, g.caption || 'Hasil kerja RR Hair Care', 600, 1400) +
           '<div class="gallery-overlay"><span>' + cap + '</span></div></div>';
@@ -37,14 +37,15 @@
     // Hero adalah elemen terbesar di layar (LCP): jangan lazy, dan minta lebar
     // yang pas dengan tampilannya (maks 420px CSS x2 untuk layar padat).
     var pasang = function (el, url, alt, lebar) {
-      el.innerHTML = imgTag(url, alt, lebar || 800, 1400)
-        .replace(' loading="lazy"', el.getAttribute('data-slot') === 'hero' ? ' fetchpriority="high"' : ' loading="lazy"');
+      // Slot "hero" sejak Okt 2026 = foto "Karya terbaru" di bawah video
+      // pembuka, jadi tetap lazy seperti foto lain.
+      el.innerHTML = imgTag(url, alt, lebar || 800, 1400);
       el.removeAttribute('hidden'); // slot yang disembunyikan saat build kini terisi
     };
     // Teks alternatif per slot — sebelumnya semua foto tetap ber-alt "RR Hair Care",
     // yang tidak memberi tahu apa pun ke pembaca layar maupun mesin pencari.
     var ALT = {
-      hero: 'Suasana salon RR Hair Care di Koja, Jakarta Utara',
+      hero: 'Karya terbaru RR Hair Care',
       about: 'Rani Apriyani dan Ratih Handayani, pendiri RR Hair Care',
       'layanan-haircut': 'Layanan potong rambut di RR Hair Care',
       'layanan-coloring': 'Layanan coloring dan highlight di RR Hair Care',
@@ -55,7 +56,7 @@
     };
     document.querySelectorAll('[data-slot]').forEach(function (el) {
       var slot = el.getAttribute('data-slot');
-      var lebar = slot === 'hero' ? 840 : (slot === 'about' ? 800 : 720);
+      var lebar = slot === 'hero' ? 520 : (slot === 'about' ? 800 : 720);
       if (imgs[slot]) return pasang(el, imgs[slot], ALT[slot] || 'RR Hair Care', lebar);
       // Hero belum diisi di admin: pinjam foto galeri TERBARU. Ini cuma jaring
       // pengaman — artinya foto pembuka halaman ikut berganti tiap ada unggahan

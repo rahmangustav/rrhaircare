@@ -24,6 +24,13 @@
       meta.textContent = R.metaKartu(items);
     });
 
+    // Harga satuan yang disebut di teks (mis. bagian Inaura).
+    document.querySelectorAll('[data-harga-layanan]').forEach(function (el) {
+      var nama = el.getAttribute('data-harga-layanan');
+      var it = list.filter(function (x) { return x.name === nama; })[0];
+      if (it) el.textContent = R.rupiah(R.hargaEfektif(it));
+    });
+
     // Isi dropdown Layanan di form Booking (nama + harga), kelompok per kategori.
     var sel = document.getElementById('layanan-select');
     if (sel) {
