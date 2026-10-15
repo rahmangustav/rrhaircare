@@ -1,4 +1,4 @@
-import { getOrders, updateOrderByCode, saveMedia, PROOF_UPLOADABLE_STATUSES,
+import { getOrders, updateOrderByCode, saveMedia, deleteMediaByUrl, PROOF_UPLOADABLE_STATUSES,
   proofRateStatus, noteProofUploaded, json } from '../lib/data.js';
 
 export default async (req, context) => {
@@ -31,6 +31,10 @@ export default async (req, context) => {
   await noteProofUploaded(ip);
   const o = await updateOrderByCode(code, { paymentProof: url, status: 'menunggu_verifikasi' });
   if (!o) return json({ error: 'Pesanan tidak ditemukan' }, 404);
+  // Status 'menunggu_verifikasi' sudah termasuk PROOF_UPLOADABLE_STATUSES, jadi
+  // pembeli bisa unggah ulang bukti bayar sebelum admin verifikasi (mis. salah
+  // foto). Tanpa ini, bukti lama tetap jadi blob sampah permanen di store 'media'.
+  if (existing.paymentProof && existing.paymentProof !== url) await deleteMediaByUrl(existing.paymentProof);
   return json({ ok: true });
 };
 
