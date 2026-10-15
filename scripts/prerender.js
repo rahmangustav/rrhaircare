@@ -11,11 +11,12 @@
 //   2. snapshot yang ikut ter-commit, kalau API tak terjangkau saat build
 // Kalau dua-duanya gagal, file tidak disentuh dan build tetap lanjut —
 // halaman jatuh ke perilaku lama (diisi JS). Aman dijalankan berulang kali.
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import '../public/js/pricelist-render.js';
 import '../public/js/img-cdn.js';
+import { terapkanHargaResmi } from '../netlify/lib/harga-resmi.js';
 
 const R = globalThis.PricelistRender;
 const C = globalThis.ImgCdn;
@@ -58,7 +59,8 @@ function gantiBlok(html, nama, isi) {
   return html.replace(re, (_m, a, b) => a + isi + b);
 }
 
-const list = await ambilJson(API, SNAPSHOT, 'layanan');
+// harga.json resmi menimpa harga admin yang namanya sama (16 Okt 2026) — lihat netlify/lib/harga-resmi.js
+const list = terapkanHargaResmi(await ambilJson(API, SNAPSHOT, 'layanan'));
 if (!list) {
   log('tidak ada data — index.html dibiarkan apa adanya, build lanjut');
   process.exit(0);
@@ -229,6 +231,11 @@ const halaman = [
   // Ketentuan belanja, pengembalian & privasi. Jarang berubah, tapi tetap perlu
   // terindeks — halaman ini yang dirujuk dari checkout sebelum orang membayar.
   { loc: 'https://rrhaircare.id/kebijakan', changefreq: 'yearly', priority: '0.3' },
+  // Halaman per layanan (scripts/halaman.py, 16 Okt 2026) — dibaca dari folder supaya halaman baru otomatis masuk.
+  ...(existsSync(path.join(root, 'public/layanan'))
+    ? readdirSync(path.join(root, 'public/layanan')).filter((f) => f.endsWith('.html')).sort()
+      .map((f) => ({ loc: `https://rrhaircare.id/layanan/${f.replace(/\.html$/, '')}`, changefreq: 'monthly', priority: '0.7' }))
+    : []),
 ];
 const sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n'
   + '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
