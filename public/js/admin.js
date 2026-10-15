@@ -34,8 +34,9 @@ function logout(){ TOKEN=null; sessionStorage.removeItem('rrhc_admin');
   document.getElementById('loginView').style.display='block';
   document.getElementById('dash').style.display='none';
   document.getElementById('logoutBtn').style.display='none'; }
-document.getElementById('logoutBtn').addEventListener('click', e=>{e.preventDefault();
-  api('/api/admin/logout',{method:'POST'}).catch(()=>{}); logout();});
+document.getElementById('logoutBtn').addEventListener('click', async e=>{e.preventDefault();
+  try { await api('/api/admin/logout',{method:'POST'}); } catch(e){}
+  logout();});
 
 function enterDash(){
   document.getElementById('loginView').style.display='none';
