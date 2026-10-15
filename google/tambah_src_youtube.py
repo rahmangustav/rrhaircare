@@ -35,7 +35,13 @@ LOG = ROOT / "data" / "src_yt.log"
 
 BATAS = None
 if "--batas" in sys.argv:
-    BATAS = int(sys.argv[sys.argv.index("--batas") + 1])
+    _i = sys.argv.index("--batas")
+    if _i + 1 >= len(sys.argv):
+        sys.exit("--batas butuh nilai, mis. --batas 40")
+    try:
+        BATAS = int(sys.argv[_i + 1])
+    except ValueError:
+        sys.exit(f"--batas harus angka, dapat: {sys.argv[_i + 1]!r}")
 
 PENANDA = "?src=yt"
 
