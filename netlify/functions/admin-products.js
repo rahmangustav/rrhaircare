@@ -17,6 +17,10 @@ export default async (req, context) => {
     if (b.imageData) {
       try { fields.image = await saveMedia(b.imageData); }
       catch (e) { return json({ error: 'Ukuran gambar terlalu besar (maks 4 MB)' }, 413); }
+      // saveMedia() balikin '' (bukan throw) kalau format tak didukung — tanpa
+      // guard ini, fields.image jadi '' dan updateProduct() menghapus foto
+      // produk lama padahal upload baru gagal total (produk tampil polos).
+      if (!fields.image) return json({ error: 'Format gambar tidak didukung (pakai JPG/PNG/WEBP/GIF)' }, 400);
     }
 
     if (req.method === 'POST') {
