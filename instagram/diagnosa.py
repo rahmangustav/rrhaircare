@@ -214,8 +214,16 @@ def main():
     # ── Pemenang ──
     juara = max(matang, key=lambda m: m['reach'])
     print("\n4. PEMENANG — patokan yang harus ditiru")
+    # juara.get('skip', 0) SALAH kalau juara itu Foto: kunci 'skip' tetap ADA di
+    # dict (diisi None oleh lapor_ig.py, cuma Reel yang punya metrik
+    # reels_skip_rate), jadi .get(..., 0) balikin None juga (default hanya
+    # dipakai kalau KUNCI tak ada, bukan kalau nilainya None) -> f"{None:.1f}"
+    # meledak TypeError dan seluruh skrip berhenti pas Foto jadi post terbaik.
+    # Pola "is not None -> format, else '—'" ini sudah dipakai di lapor_ig.py
+    # untuk field yang sama; disamakan di sini.
+    skip_txt = f"{juara['skip']:.1f}%" if juara.get('skip') is not None else "—"
     print(f"    {juara['tanggal'][:16]} · jangkauan {juara['reach']} · "
-          f"{juara['jenis']} · skip {juara.get('skip', 0):.1f}% · like {juara['likes']}")
+          f"{juara['jenis']} · skip {skip_txt} · like {juara['likes']}")
     print(f"    {(juara['judul'] or '(tanpa caption)')[:64]}")
     lain = [m['reach'] for m in matang if m is not juara]
     if lain:
