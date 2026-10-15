@@ -441,6 +441,7 @@ async function loadSettings(){
   document.getElementById('setStylists').value = (s.stylists||[]).join('\n');
   SHIP = s.shippingOptions||[];
   renderShipEditor();
+  document.getElementById('pwWarning').classList.toggle('show', !!s.usingDefaultPassword);
 }
 async function saveStylists(){
   const list = document.getElementById('setStylists').value

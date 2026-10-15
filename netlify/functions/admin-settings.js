@@ -1,11 +1,12 @@
-import { requireAuth, getSettings, saveSettings, saveMedia, hashPassword, deleteMediaByUrl, json } from '../lib/data.js';
+import { requireAuth, getSettings, saveSettings, saveMedia, hashPassword, isDefaultPassword, deleteMediaByUrl, json } from '../lib/data.js';
 
 export default async (req) => {
   if (!(await requireAuth(req))) return json({ error: 'Perlu login admin' }, 401);
 
   if (req.method === 'GET') {
-    const { adminPassword, authSecret, ...rest } = await getSettings();
-    return json(rest);
+    const full = await getSettings();
+    const { adminPassword, authSecret, ...rest } = full;
+    return json({ ...rest, usingDefaultPassword: isDefaultPassword(full) });
   }
 
   if (req.method === 'PUT') {
