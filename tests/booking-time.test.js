@@ -1,8 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 import '../public/js/booking-time.js';
 
-const { todayWIB, slotStartMinutes, isSlotPast } = globalThis.BookingTime;
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const BOOKING_TIME_FILE = path.join(__dirname, '../public/js/booking-time.js');
+
+const { todayWIB, slotStartMinutes, isSlotPast, formatTanggalBooking } = globalThis.BookingTime;
 
 test('todayWIB: tengah malam WIB (00:30) masih tanggal yang sama, bukan mundur ke UTC kemarin', () => {
   // 2026-07-22 00:30 WIB = 2026-07-21 17:30 UTC
@@ -65,4 +71,30 @@ test('isSlotPast: format jam tak dikenali -> tidak pernah dianggap lewat (gagal 
 test('isSlotPast: tanggal kosong -> false', () => {
   const nowMs = Date.parse('2026-07-22T12:00:00.000Z');
   assert.equal(isSlotPast('', '09:00 - 10:00', nowMs), false);
+});
+
+test('formatTanggalBooking: format Indonesia lengkap dari nilai <input type=date>', () => {
+  assert.equal(formatTanggalBooking('2026-08-05'), 'Rabu, 5 Agustus 2026');
+});
+
+test('formatTanggalBooking: input kosong/tak dikenali -> dikembalikan apa adanya, tidak error', () => {
+  assert.equal(formatTanggalBooking(''), '');
+  assert.equal(formatTanggalBooking(undefined), '');
+  assert.equal(formatTanggalBooking('bukan-tanggal'), 'bukan-tanggal');
+});
+
+test('formatTanggalBooking: tanggal yang tampil di pesan booking TIDAK boleh mundur satu hari ' +
+  'untuk pengunjung di zona waktu sebelah barat UTC (mis. diaspora yang booking dari luar negeri) — ' +
+  'sebelumnya `new Date(tanggalString)` diparse sebagai UTC tengah malam lalu diformat di zona LOKAL ' +
+  'perangkat, jadi tanggal booking yang terkirim ke WhatsApp salah satu hari lebih awal', () => {
+  const script = `
+    globalThis.window = globalThis;
+    require(${JSON.stringify(BOOKING_TIME_FILE)});
+    console.log(globalThis.BookingTime.formatTanggalBooking('2026-08-05'));
+  `;
+  for (const tz of ['America/New_York', 'Pacific/Midway', 'Asia/Jakarta']) {
+    const out = execFileSync(process.execPath, ['-e', script], { env: { ...process.env, TZ: tz } })
+      .toString().trim();
+    assert.equal(out, 'Rabu, 5 Agustus 2026', `zona ${tz} menghasilkan tanggal yang salah: ${out}`);
+  }
 });
