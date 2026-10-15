@@ -13,6 +13,16 @@ async function readJSON(key, fallback) {
 const writeJSON = (key, val) => shop().setJSON(key, val);
 
 // ── Password (scrypt) ──
+// Panel admin.js sudah menolak password baru < 6 karakter di client
+// (changePw()), tapi endpoint /api/admin/settings sebelumnya tidak pernah
+// mengecek ulang di server — siapa pun yang sudah punya token admin bisa
+// memanggil API langsung (curl/devtools) dan mengganti password jadi satu
+// karakter, melewati batas yang dikira berlaku. isValidAdminPassword()
+// dipisah jadi fungsi murni supaya bisa dites tanpa Blobs.
+export const MIN_ADMIN_PASSWORD_LENGTH = 6;
+export function isValidAdminPassword(pw) {
+  return typeof pw === 'string' && pw.length >= MIN_ADMIN_PASSWORD_LENGTH;
+}
 export function hashPassword(pw) {
   const salt = randomBytes(16).toString('hex');
   return salt + ':' + scryptSync(pw, salt, 64).toString('hex');
