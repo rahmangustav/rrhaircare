@@ -16,6 +16,8 @@ H = {k: int(v) for k, v in json.load(open(os.path.expanduser("~/RRHairCare/post/
 SITUS = "https://rrhaircare.id"
 WA = "6281386291552"
 WA_TAMPIL = "0813-8629-1552"
+MAPS = "https://maps.google.com/?cid=4641963643779539975"
+ULASAN = "https://g.page/r/CQfkwf9WkWtAEAI/review"
 ALAMAT = [("Salon 1", "Jl. B Raya No. 6, RT.8/RW.5, Rawabadak Utara, Koja, Jakarta Utara 14230"),
           ("Salon 2 (RR Hair Care Premium)", "Jl. B Raya No. 55B, RT.5/RW.9, Rawabadak Utara, Koja, Jakarta Utara 14230")]
 CATATAN_DURASI = "Perkiraan durasi — tergantung panjang, ketebalan & kondisi rambut; kepastiannya dari capster saat booking."
@@ -282,6 +284,8 @@ def halaman(h):
       <p>Buka setiap hari 09.00–21.00 WIB · Ada valet parkir di dua salon · Bayar QRIS, transfer, atau tunai.</p>
   </div>
   <a class="tombol" href="{e(wa_link(h['wa']))}" target="_blank" rel="noopener" data-wa="layanan-{h['slug']}-bawah">Chat WhatsApp {WA_TAMPIL}</a>
+  <a class="tombol garis" href="{MAPS}" target="_blank" rel="noopener">Lihat di Google Maps</a>
+  <a class="tombol garis" href="{ULASAN}" target="_blank" rel="noopener">Tulis ulasan Google</a>
 
   <h2>Layanan lain</h2>
   <ul class="lain">
